@@ -242,7 +242,7 @@
   .ooyl-toggle input:focus-visible + .ooyl-toggle__track, .ooyl-match:focus-visible, .ooyl-player:focus-visible,
   tr.row-link:focus-visible, .ooyl-bars__row.is-link:focus-visible, .ooyl-dotplot__row.is-link:focus-visible,
   summary:focus-visible, .team-row:focus-visible, .pick-row:focus-visible, .slot .link:focus-visible,
-  .gallery a:focus-visible, .ooyl-topbar__brand:focus-visible {
+  .gallery a:focus-visible, .ooyl-topbar__brand:focus-visible, .ooyl-scoreboard__meta a:focus-visible {
     outline: none; box-shadow: var(--focus-ring);
   }
 
@@ -847,6 +847,25 @@
   .ooyl-shotmap__legend svg { flex: none; }
   .ooyl-shotmap__note { margin: var(--space-2) 0 0; font-size: 12px; color: var(--ink-muted); }
   .ooyl-shot-line { fill: none; stroke: var(--pitch-line); stroke-width: 2.5; }
+  /* Team page: one side's shots, so no home/away colors. Marks are data-dot, goals accent; hovering one
+     dims the rest. Vertical swipes still scroll the page on phones: a season map is most of the screen. */
+  .team-shots .ooyl-shotmap__pitch { touch-action: pan-y; }
+  .ooyl-shotmap__pitch .shot { transition: opacity .12s ease; }
+  .ooyl-shotmap__pitch.is-hovering .shot { opacity: 0.2; }
+  .ooyl-shotmap__pitch.is-hovering .shot.is-active { opacity: 1; }
+  .team-shots .ooyl-card__head { margin-bottom: var(--space-3); }
+  .team-shots .ooyl-shotmap { grid-template-columns: minmax(0, 1fr) 264px; }  /* room for "xG por finalização" */
+  @media (max-width: 760px) { .team-shots .ooyl-shotmap { grid-template-columns: 1fr; } }
+  .team-shots .ooyl-shotmap__side table { margin-top: var(--space-1); }
+  .team-shots .ooyl-shotmap__side .ooyl-sub { font-size: 12px; line-height: 17px; }
+  .team-shots .ooyl-shotmap__side .ooyl-btn { align-self: flex-start; }
+  /* The filter strip counts each filter; on phones its six options take two rows of three. */
+  .shot-filter .ooyl-tab .n { margin-left: 6px; font: 400 11.5px/1 var(--font-mono); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .shot-filter .ooyl-tab[aria-selected="true"] .n { color: var(--ink); }
+  @media (max-width: 640px) {
+    .ooyl-tabs--segmented.shot-filter { grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .shot-filter .ooyl-tab .n { display: block; margin: 3px 0 0; }
+  }
 
   /* ---- tooltip ---------------------------------------------------------------------------------- */
   .ooyl-tip {
@@ -880,6 +899,74 @@
   #site-body { margin-top: var(--space-3); }
   .site-repo input { width: min(46ch, 64vw); }
 
+  /* ---- arbitragem: the referees' list and each referee's profile ----------------------------------- */
+  .ref-tags { display: flex; flex-wrap: wrap; gap: 4px; min-width: 210px; }
+  .ref-score { margin: 0 8px; font: 700 13px/1 var(--font-mono); color: var(--ink-strong); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ref-games .tname { white-space: nowrap; }
+  .ref-muted { font-size: 12.5px; color: var(--ink-muted); white-space: nowrap; }
+  .monogram {
+    display: inline-flex; align-items: center; justify-content: center; flex: none; width: 64px; height: 64px; border-radius: 50%;
+    background: var(--surface-raised); box-shadow: 0 0 0 2px var(--line-strong); color: var(--ink-strong);
+    font-family: var(--ooyl-head-font); font-weight: var(--ooyl-head-weight); font-size: calc(22px * var(--ooyl-head-scale));
+    line-height: 1; letter-spacing: 0.02em;  /* the edition's headline face, as the name beside it */
+  }
+  .ref-note { margin: 0 0 var(--space-4); max-width: 76ch; font-size: 13.5px; line-height: 20px; color: var(--ink-muted); }
+  .ref-traits { list-style: none; margin: 0 0 var(--space-5); padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+  .ref-trait { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-3); font-size: 13.5px; line-height: 20px; color: var(--ink-muted); }
+  .ref-trait .ooyl-tag { height: 22px; padding: 0 8px; font-size: 10.5px; color: var(--ink-strong); box-shadow: inset 0 0 0 1px var(--ink-muted); }
+  /* Profile strip: one row per number, the other referees as faint dots, this one in accent. */
+  .ref-strip { display: flex; flex-direction: column; }
+  .ref-strip__row {
+    display: grid; grid-template-columns: minmax(150px, 240px) minmax(0, 1fr) 64px; column-gap: var(--space-3); align-items: center;
+    min-height: 40px; border-bottom: 1px solid var(--line);
+  }
+  .ref-strip__row:last-child { border-bottom: 0; }
+  .ref-strip__row.is-trait { box-shadow: inset 3px 0 0 var(--accent); }
+  .ref-strip__name { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-left: var(--space-3); }
+  .ref-strip__name b { font-weight: 500; font-size: 13.5px; line-height: 1.2; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ref-strip__row.is-trait .ref-strip__name b { color: var(--ink-strong); font-weight: 600; }
+  .ref-strip__name small { font: 400 11px/1 var(--font-mono); color: var(--ink-muted); }
+  .ref-strip__plot { position: relative; align-self: stretch; min-height: 40px; margin: 0 8px; }
+  .ref-strip__plot::before { content: ""; position: absolute; left: -8px; right: -8px; top: 50%; border-top: 1px solid var(--line); }
+  .ref-strip__peer {
+    position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; cursor: pointer;
+    background: radial-gradient(circle, var(--data-context) 0 3.5px, transparent 4px);
+  }
+  .ref-strip__peer:hover { background: radial-gradient(circle, var(--ink) 0 4.5px, transparent 5px); }
+  .ref-strip__me {
+    position: absolute; top: 50%; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; border-radius: 50%; pointer-events: none;
+    background: var(--accent); box-shadow: 0 0 0 2px var(--surface), 0 0 0 8px var(--accent-soft);
+  }
+  .ref-strip__val { text-align: right; padding-right: var(--space-1); font: 700 13px/1 var(--font-mono); color: var(--ink-strong); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* Two cards side by side on wide screens: home and away next to VAR, reasons next to minutes. */
+  .ref-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); align-items: start; }
+  .ooyl-compare__name small { display: block; margin-top: 3px; font: 400 11px/1.3 var(--font-mono); color: var(--ink-muted); }
+  /* Card minutes: the referee's share in each 15 minutes as columns, the league's as a dashed mark. */
+  .ref-minutes { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-2); }
+  .ref-minutes__col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .ref-minutes__plot { position: relative; height: 160px; border-bottom: 1px solid var(--line-strong); }
+  .ref-minutes__bar {
+    position: absolute; bottom: 0; left: 16%; right: 16%; min-height: 1px;
+    border-radius: var(--radius-xs) var(--radius-xs) 0 0; background: var(--data-context);
+  }
+  .ref-minutes__col.is-lead .ref-minutes__bar { background: var(--accent); }
+  .ref-minutes__league { position: absolute; left: 4%; right: 4%; border-top: 2px dashed var(--ink-muted); }
+  .ref-minutes__val { text-align: center; font: 400 12.5px/1 var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ref-minutes__col.is-lead .ref-minutes__val { color: var(--ink-strong); font-weight: 700; }
+  .ref-minutes__label { text-align: center; font: 400 11px/1.2 var(--font-mono); color: var(--ink-muted); white-space: nowrap; }
+  .ooyl-scoreboard__meta a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; border-radius: var(--radius-xs); }
+  .ooyl-scoreboard__meta a:hover { text-decoration-color: currentColor; }
+  @media (max-width: 900px) { .ref-pair { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 640px) {
+    .ref-strip__row { grid-template-columns: minmax(104px, 132px) minmax(0, 1fr) 56px; column-gap: var(--space-2); }
+    .ref-strip__val { font-size: 12px; }
+    .ref-strip__name { padding-left: var(--space-2); }
+    .ref-strip__name b { white-space: normal; font-size: 12.5px; }
+    .ref-minutes { gap: 4px; }
+    .ref-minutes__label { font-size: 10px; white-space: normal; }
+    .monogram { width: 52px; height: 52px; font-size: calc(18px * var(--ooyl-head-scale)); }
+  }
+
   /* ---- pages: back link and hero ---------------------------------------------------------------- */
   .page-back { margin-bottom: calc(var(--space-2) * -1); }
   .page-hero { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-2) 0; }
@@ -897,7 +984,8 @@
   .err { color: var(--bad); }
 
   @media (forced-colors: active) {
-    .ooyl-bars__track i, .swatch, .zone, .ooyl-cardmark, .ooyl-odds__bar i, .ooyl-compare__half i { forced-color-adjust: none; border: 1px solid ButtonText; }
+    .ooyl-bars__track i, .swatch, .zone, .ooyl-cardmark, .ooyl-odds__bar i, .ooyl-compare__half i,
+    .ref-minutes__bar, .ref-strip__me { forced-color-adjust: none; border: 1px solid ButtonText; }
   }
 </style>
 </head>
@@ -919,8 +1007,8 @@
         <button class="ooyl-tab" role="tab" data-view="estatisticas" aria-selected="false">Estatísticas</button>
         <button class="ooyl-tab" role="tab" data-view="jogadores" aria-selected="false">Desempenho individual</button>
         <button class="ooyl-tab" role="tab" data-view="selecao" aria-selected="false">Seleção</button>
+        <button class="ooyl-tab" role="tab" data-view="arbitragem" aria-selected="false">Arbitragem</button>
         <button class="ooyl-tab" role="tab" data-view="simulador" aria-selected="false">Simulador</button>
-        <button class="ooyl-tab" role="tab" data-view="admin" aria-selected="false" id="tab-admin" hidden>Admin</button>
       </div>
     </nav>
     <div class="ooyl-topbar__end">
@@ -1105,6 +1193,40 @@
     <div id="sel-best" class="view"></div>
   </section>
 
+  <!-- ARBITRAGEM: os arbitros da temporada, com os tracos de perfil de cada um -->
+  <section id="view-arbitragem" class="view" hidden>
+    <div class="ooyl-tiles" id="ref-kpis"></div>
+
+    <section class="ooyl-card">
+      <header class="ooyl-card__head">
+        <div class="ooyl-card__titles">
+          <h2 class="ooyl-headline">Árbitros</h2>
+          <p class="ooyl-sub" id="refs-sub">Carregando os árbitros...</p>
+        </div>
+      </header>
+      <div class="scroll"><table id="refs-table"></table></div>
+    </section>
+
+    <section class="ooyl-card">
+      <header class="ooyl-card__head">
+        <div class="ooyl-card__titles">
+          <h2 class="ooyl-headline">Comparar árbitros</h2>
+          <p class="ooyl-sub" id="refs-compare-sub"></p>
+        </div>
+        <div class="ooyl-card__actions">
+          <span class="ooyl-field"><label class="ctl" for="ref-metric">Número</label><select id="ref-metric"></select></span>
+        </div>
+      </header>
+      <div id="refs-chart"></div>
+    </section>
+  </section>
+
+  <!-- ARBITRO: o perfil tracado de um arbitro -->
+  <section id="view-arbitro" class="view" hidden>
+    <div class="page-back"><button class="ooyl-btn ooyl-btn--ghost ooyl-btn--sm" id="referee-back">‹ Voltar</button></div>
+    <div id="referee-body" class="view"></div>
+  </section>
+
   <!-- SIMULADOR -->
   <section id="view-simulador" class="view" hidden>
     <div class="ooyl-tabs ooyl-tabs--segmented" id="sim-modes" role="tablist" aria-label="Modo do simulador">
@@ -1199,68 +1321,7 @@
   </section>
 
   <!-- ADMIN -->
-  <section id="view-admin" class="view" hidden>
-    <div class="ooyl-tiles" id="admin-kpis"></div>
-
-    <section class="ooyl-card">
-      <header class="ooyl-card__head">
-        <div class="ooyl-card__titles">
-          <h2 class="ooyl-headline">Coleta</h2>
-          <p class="ooyl-sub">Cada botão roda o script correspondente aqui na máquina, um de cada vez, e mostra a saída ao vivo.</p>
-        </div>
-        <div class="ooyl-card__actions" id="admin-state"></div>
-      </header>
-      <div class="controls" id="admin-actions"></div>
-      <div class="admin-auto" id="admin-auto"></div>
-      <p class="ooyl-sub admin-agenda" id="admin-agenda"></p>
-      <pre class="log" id="admin-log">Sem atividade nesta sessão.</pre>
-    </section>
-
-    <section class="ooyl-card" id="site-card" hidden>
-      <header class="ooyl-card__head">
-        <div class="ooyl-card__titles">
-          <h2 class="ooyl-headline">Site público</h2>
-          <p class="ooyl-sub">Uma cópia estática do dashboard no GitHub Pages: tudo, menos esta aba Admin, que continua só aqui na máquina.</p>
-        </div>
-        <div class="ooyl-card__actions" id="site-state"></div>
-      </header>
-      <div id="site-form"></div>
-      <div id="site-body"></div>
-    </section>
-
-    <section class="ooyl-card">
-      <header class="ooyl-card__head">
-        <div class="ooyl-card__titles">
-          <h2 class="ooyl-headline">Gráficos</h2>
-          <p class="ooyl-sub">Gera os PNGs de <code>graficos/</code> com os dados que já estão em disco.</p>
-        </div>
-        <div class="ooyl-card__actions" id="chart-controls"></div>
-      </header>
-      <div class="gallery" id="chart-gallery"></div>
-    </section>
-
-    <section class="ooyl-card">
-      <header class="ooyl-card__head">
-        <div class="ooyl-card__titles">
-          <h2 class="ooyl-headline">Agendamento no sistema</h2>
-          <p class="ooyl-sub">Para coletar mesmo com o dashboard fechado. O comando instalado é este, e nada roda antes de você clicar.</p>
-        </div>
-        <div class="ooyl-card__actions" id="sched-state"></div>
-      </header>
-      <div id="sched-body"></div>
-    </section>
-
-    <section class="ooyl-card">
-      <header class="ooyl-card__head">
-        <div class="ooyl-card__titles">
-          <h2 class="ooyl-headline">Diagnóstico</h2>
-          <p class="ooyl-sub">Partidas finalizadas com arquivo faltando, bloqueado por 404 ou sem xG, e times sem escudo.</p>
-        </div>
-        <div class="ooyl-card__actions"><button class="ooyl-btn" id="gaps-run">Conferir agora</button></div>
-      </header>
-      <div id="gaps-body"><div class="empty">Clique em conferir para varrer o cache.</div></div>
-    </section>
-  </section>
+  <section id="view-admin" class="view" hidden></section>
 </main>
 
 <script>
@@ -1272,7 +1333,9 @@
     mmode: "resultados", nextRound: "",  // Partidas: results or the calendar ahead; each keeps its own round
     minGames: 0, pos: "",
     player: null, playerMap: null, sel: null, selPick: null, team: null, teamMode: "frequent",
+    teamTab: "escalacoes", teamShots: { match: "", filter: "todos" },  // Times: page tab; shotmap scope ("" = season) and filter
     simMode: "manual", simPicks: null, simManRound: 0,
+    refs: null, refById: null, referee: null, refMetric: "cards",  // Arbitragem: /api/referees, the open profile, the compared number
     admin: null, adminSeq: 0, adminLog: [], adminTimer: null, adminOn: false,
     chartScope: "tudo", chartLang: "pt", schedOutput: "",
   };
@@ -1442,6 +1505,7 @@
 
   // A ranking as bars: the leader in accent, the rest in data-context, the value at each tip.
   // One image per row, the face or else the badge; the team is written next to the name.
+  // opts.open gives a row's link; a row it answers null for is not a link.
   function barList(host, rows, opts) {
     clear(host);
     const max = Math.max(1, ...rows.map(opts.value));
@@ -1449,7 +1513,8 @@
     rows.forEach((r, i) => {
       const share = Math.max(0.004, opts.value(r) / max);
       const photo = opts.face ? opts.face(r) : null, badge = opts.logo ? opts.logo(r) : null;
-      const open = opts.open ? () => { hideTip(); go(opts.open(r)); } : null;
+      const href = opts.open ? opts.open(r) : null;
+      const open = href ? () => { hideTip(); go(href); } : null;
       const row = el("li", {
         class: "ooyl-bars__row" + (i === 0 ? " is-lead" : "") + (open ? " is-link" : ""), tabindex: open ? "0" : null,
         onclick: open, onkeydown: open ? (ev) => { if (ev.key === "Enter") open(); } : null },
@@ -1476,9 +1541,11 @@
     clear(host);
     const vals = rows.map(opts.value), ref = opts.reference;
     const low = Math.min(...vals, ref ? ref.value : Infinity), high = Math.max(...vals, ref ? ref.value : -Infinity);
-    // Scale in tenths, so ticks carry no floating-point error.
-    const step = (high - low) * 10 > 10 ? 2 : 1;
-    const lo10 = Math.floor((low * 10 - 0.6) / step) * step;
+    // Scale in tenths, so ticks carry no floating-point error. Ratings span a point or two; the
+    // referees' numbers (fouls per match, the first card's minute) need a coarser step.
+    const step = [1, 2, 5, 10, 20, 50, 100].find((s) => (high - low) * 10 / s <= 10) || 200;
+    const floor10 = Math.floor((low * 10 - 0.6) / step) * step;
+    const lo10 = low >= 0 ? Math.max(0, floor10) : floor10;  // a count never gets a negative tick
     const hi10 = Math.max(lo10 + step, Math.ceil((high * 10 + 0.6) / step) * step);
     const x = (v) => ((v * 10 - lo10) / (hi10 - lo10)) * 100;
     const ticks = [];
@@ -1511,7 +1578,7 @@
     });
     box.appendChild(el("div", { class: "ooyl-dotplot__row is-axis" }, el("span"), el("span"),
       el("span", { class: "ooyl-dotplot__plot" }, overlay(),
-        ticks.map((t) => el("span", { class: "ooyl-dotplot__tick", style: `left:${x(t)}%`, text: fmt(t, 1) }))), el("span")));
+        ticks.map((t) => el("span", { class: "ooyl-dotplot__tick", style: `left:${x(t)}%`, text: fmt(t, step % 10 ? 1 : 0) }))), el("span")));
     host.appendChild(box);
   }
 
@@ -1823,6 +1890,392 @@
       return;
     }
     built.cards.forEach((card) => host.appendChild(card));
+  }
+
+  // ---- arbitragem: os árbitros da temporada e o perfil de cada um ----------
+  // Tudo vem de /api/referees (referees.py): por árbitro, a média por jogo de cada número, a
+  // mesma média na liga e o quanto ela se afasta do resto da liga em erros-padrão. Quem decide
+  // um traço é o servidor (mínimo de jogos e diferença além do acaso); a página só dá o nome.
+  // A ordem das chaves é a ordem das linhas do perfil.
+  const REF_METRICS = {
+    cards: { name: "Cartões por jogo", phrase: "cartões por jogo", digits: 1, up: "Muitos cartões", down: "Poucos cartões" },
+    reds: { name: "Expulsões por jogo", phrase: "expulsões por jogo", digits: 2, up: "Expulsa com frequência", down: "Raramente expulsa" },
+    fouls: { name: "Faltas por jogo", phrase: "faltas marcadas por jogo", digits: 1, up: "Apita muito", down: "Deixa o jogo correr" },
+    cardsPerFoul: { name: "Cartões a cada 10 faltas", phrase: "cartões a cada 10 faltas", digits: 1, up: "Cartão fácil", down: "Segura o cartão" },
+    argument: { name: "Reclamação: cartões por jogo", phrase: "cartões por reclamação por jogo", digits: 2, up: "Não tolera reclamação", down: "Tolera reclamação" },
+    penalties: { name: "Pênaltis por jogo", phrase: "pênaltis por jogo", digits: 2, up: "Marca muitos pênaltis", down: "Marca poucos pênaltis" },
+    var: { name: "Decisões do VAR por jogo", phrase: "decisões do VAR por jogo", digits: 2, up: "VAR muito acionado", down: "VAR pouco acionado" },
+    added1: { name: "Acréscimo no 1º tempo", phrase: "min de acréscimo no 1º tempo", digits: 1, unit: " min", up: "Acréscimo longo no 1º tempo", down: "Acréscimo curto no 1º tempo" },
+    added2: { name: "Acréscimo no 2º tempo", phrase: "min de acréscimo no 2º tempo", digits: 1, unit: " min", up: "Acréscimo longo no 2º tempo", down: "Acréscimo curto no 2º tempo" },
+    firstCard: { name: "Minuto do 1º cartão", phrase: "min até o primeiro cartão, em média", digits: 0, unit: "'", up: "Demora a dar cartão", down: "Cartão cedo" },
+    awayGap: { name: "Cartões: visitante − mandante", digits: 1, signed: true, up: "Mais cartões ao visitante", down: "Mais cartões ao mandante" },
+  };
+  const VAR_KINDS = {
+    goalAwarded: "Gol validado", goalNotAwarded: "Gol anulado", penaltyAwarded: "Pênalti marcado",
+    penaltyNotAwarded: "Pênalti não marcado", cardUpgrade: "Cartão agravado", redCardGiven: "Vermelho aplicado",
+    mistakenIdentity: "Jogador corrigido", other: "Outra decisão",
+  };
+  const REF_TITLES = {
+    J: "Partidas apitadas nesta temporada", "Cart./J": "Cartões por jogo, os da comissão técnica incluídos",
+    A: "Amarelos", "Exp.": "Expulsões: segundo amarelo e vermelho direto", "Faltas/J": "Faltas marcadas por jogo",
+    "Pên.": "Pênaltis marcados", VAR: "Decisões do VAR registradas pelo SofaScore",
+    "Acrésc.": "Acréscimo médio anunciado no 2º tempo, em minutos",
+    Perfil: "Onde o árbitro se afasta do resto da liga mais do que o acaso explicaria",
+    Cartões: "Cartões recebidos pelo time nos jogos deste árbitro, os da comissão técnica incluídos",
+    "Por jogo": "Cartões recebidos por jogo com este árbitro", Temporada: "Cartões recebidos por jogo em toda a temporada",
+    "Pên. a favor": "Pênaltis marcados a favor do time", Faltas: "Faltas marcadas na partida, somando os dois times",
+  };
+  const pairSum = (p) => p[0] + p[1];
+  const varTotal = (r) => Object.values(r.var).reduce((a, b) => a + b, 0);
+  const qualifiedRefs = () => state.refs.referees.filter((r) => r.j >= state.refs.minGames);
+  const metricText = (key, v) => {
+    const spec = REF_METRICS[key];
+    return v === null || v === undefined ? "-" : (spec.signed && v > 0 ? "+" : "") + fmt(v, spec.digits) + (spec.unit || "");
+  };
+  const traitName = (t) => REF_METRICS[t.metric][t.dir > 0 ? "up" : "down"];
+  // The trait as a sentence with its numbers: "6,7 cartões por jogo; na liga, 5,1".
+  function traitSentence(t, r) {
+    const spec = REF_METRICS[t.metric], v = r.metrics[t.metric], league = state.refs.league.metrics[t.metric];
+    if (t.metric === "awayGap") {
+      const side = (x) => x >= 0 ? "o visitante" : "o mandante";
+      return `${fmt(Math.abs(v), 1)} cartão a mais por jogo para ${side(v)}; na liga, ${fmt(Math.abs(league), 1)} a mais para ${side(league)}`;
+    }
+    return `${fmt(v, spec.digits)} ${spec.phrase}; na liga, ${fmt(league, spec.digits)}`;
+  }
+  // Initials for the hero, since there is no photo: first and last names, particles skipped.
+  const initials = (name) => {
+    const words = (name || "").split(/\s+/).filter((w) => w && !/^(de|da|do|das|dos|e|filho|j[uú]nior|neto|sobrinho)$/i.test(w));
+    return words.length ? (words[0][0] + (words.length > 1 ? words[words.length - 1][0] : "")).toUpperCase() : "?";
+  };
+  const reasonName = (k) => {
+    const text = k === "none" ? "sem motivo registrado" : CARD_REASONS[k] || k;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+  // Minutes of each bucket, from the upper bounds the server sends: 1–15', ..., 31–45+', 76–90+'.
+  const bucketName = (b, i) => `${i ? b[i - 1] + 1 : 1}–${b[i]}${b[i] === 45 || b[i] === 90 ? "+" : ""}'`;
+
+  function refTags(r) {
+    if (r.j < state.refs.minGames) return el("span", { class: "ref-muted", text: "amostra pequena" });
+    if (!r.traits.length) return el("span", { class: "ref-muted", text: "no padrão da liga" });
+    return el("span", { class: "ref-tags" }, r.traits.slice(0, 3).map((t) => el("span", { class: "ooyl-tag", text: traitName(t) })),
+      r.traits.length > 3 ? el("span", { class: "ref-muted", text: "+" + (r.traits.length - 3) }) : null);
+  }
+
+  async function loadReferees() {
+    if (state.refs) return;
+    const res = await fetch("/api/referees");
+    const payload = await res.json().catch(() => ({}));
+    // 404: a dashboard.py started before this tab existed, still running the old code.
+    if (!res.ok) throw new Error(res.status === 404 ? "o servidor em execução não tem essa rota; reinicie o dashboard.py"
+      : payload.erro || ("HTTP " + res.status));
+    state.refs = payload;
+    state.refById = new Map(payload.referees.map((r) => [r.id, r]));
+  }
+
+  async function openReferees() {
+    setView("arbitragem");
+    if (!state.refs) {
+      clear($("ref-kpis")); clear($("refs-table")); clear($("refs-chart"));
+      $("refs-sub").textContent = "Carregando os árbitros...";
+    }
+    try {
+      await loadReferees();
+    } catch (err) {
+      $("refs-sub").textContent = "Não foi possível ler a arbitragem: " + err.message;
+      return;
+    }
+    if (state.view === "arbitragem") renderReferees();
+  }
+
+  async function openReferee(id) {
+    setView("arbitro");
+    state.referee = id;
+    if (!state.refs) clear($("referee-body")).appendChild(el("div", { class: "empty", text: "Carregando árbitro..." }));
+    try {
+      await loadReferees();
+    } catch (err) {
+      clear($("referee-body")).appendChild(el("div", { class: "empty err", text: "Falha ao ler o árbitro: " + err.message }));
+      return;
+    }
+    if (state.view === "arbitro" && state.referee === id) renderReferee();
+  }
+
+  function renderReferees() {
+    const d = state.refs, L = d.league, M = L.metrics;
+    if (!d.referees.length) {
+      clear($("ref-kpis")); clear($("refs-table")); clear($("refs-chart"));
+      $("refs-sub").textContent = "Nenhuma partida coletada traz o árbitro.";
+      $("refs-compare-sub").textContent = "";
+      return;
+    }
+    tiles($("ref-kpis"), [
+      ["Árbitros", fmt(d.referees.length), fmt(qualifiedRefs().length) + " com " + d.minGames + " jogos ou mais"],
+      ["Cartões por jogo", fmt(M.cards, 1), fmt(pairSum(L.yellow)) + " amarelos, " + fmt(pairSum(L.reds)) + " expulsões"],
+      ["Faltas por jogo", fmt(M.fouls, 1), fmt(M.cardsPerFoul, 1) + " cartões a cada 10 faltas"],
+      ["Pênaltis", fmt(pairSum(L.penalties)), fmt(M.penalties, 2) + " por jogo, " + fmt(L.penalties[0]) + " para o mandante"],
+      ["Decisões do VAR", fmt(varTotal(L)), fmt(M.var, 2) + " por jogo"],
+      ["Acréscimo no 2º tempo", fmt(M.added2, 1), "minutos anunciados, em média; " + metricText("added1", M.added1) + " no 1º tempo"],
+    ]);
+    $("refs-sub").textContent = `${d.referees.length} árbitros apitaram as ${fmt(L.j)} partidas coletadas. Clique num nome `
+      + `para abrir o perfil. Um traço só aparece com ${d.minGames} jogos ou mais e quando a diferença para o resto da liga `
+      + "passa do que o acaso explicaria. A escala não é sorteada, e os clássicos ficam com poucos nomes: o perfil descreve "
+      + "os jogos que cada um apitou, não intenção.";
+    const table = clear($("refs-table"));
+    const head = ["#", "Árbitro", "J", "Cart./J", "A", "Exp.", "Faltas/J", "Pên.", "VAR", "Acrésc.", "Perfil"];
+    table.appendChild(el("thead", {}, el("tr", {}, head.map((h, i) =>
+      el("th", { class: i <= 1 || i === head.length - 1 ? "left" : "", text: h, title: REF_TITLES[h] || "" })))));
+    table.appendChild(el("tbody", {}, d.referees.map((r, i) => el("tr", {
+      class: "row-link", title: "abrir o perfil do árbitro", onclick: () => go("#/arbitro/" + r.id) },
+      el("td", { class: "left pos", text: String(i + 1) }),
+      el("td", { class: "left", text: r.name }),
+      el("td", { text: fmt(r.j) }),
+      el("td", { class: "strong", text: fmt(r.metrics.cards, 1) }),
+      el("td", { text: fmt(pairSum(r.yellow)) }), el("td", { text: fmt(pairSum(r.reds)) }),
+      el("td", { text: fmt(r.metrics.fouls, 1) }),
+      el("td", { text: fmt(pairSum(r.penalties)) }), el("td", { text: fmt(varTotal(r)) }),
+      el("td", { text: fmt(r.metrics.added2, 1) }),
+      el("td", { class: "left" }, refTags(r))))));
+
+    const pick = clear($("ref-metric"));
+    Object.entries(REF_METRICS).forEach(([key, spec]) => pick.appendChild(el("option", { value: key, text: spec.name })));
+    pick.value = state.refMetric;
+    pick.onchange = () => { state.refMetric = pick.value; renderRefCompare(); };
+    renderRefCompare();
+  }
+
+  // Dot plot, as for the ratings: the numbers sit far from zero (22 to 31 fouls a match), so bars
+  // from zero would all look alike. Only referees with enough matches, the league as the dashed line.
+  function renderRefCompare() {
+    const d = state.refs, key = state.refMetric, spec = REF_METRICS[key], league = d.league.metrics[key];
+    const rows = qualifiedRefs().filter((r) => r.metrics[key] !== null)
+      .sort((a, b) => b.metrics[key] - a.metrics[key] || a.name.localeCompare(b.name, "pt-BR"));
+    $("refs-compare-sub").textContent = `${spec.name}, de quem apitou ${d.minGames} jogos ou mais, do maior para o menor. `
+      + "A linha tracejada é a média da liga. Clique para abrir o perfil.";
+    const host = clear($("refs-chart"));
+    if (!rows.length) { host.appendChild(el("div", { class: "empty", text: "Nenhum árbitro com jogos suficientes." })); return; }
+    dotPlot(host, rows, {
+      label: spec.name + " por árbitro", value: (r) => r.metrics[key], digits: spec.digits,
+      reference: league !== null ? { value: league, label: "liga " + metricText(key, league) } : null,
+      name: (r) => r.name, note: (r) => r.j + "j", open: (r) => "#/arbitro/" + r.id,
+      tip: (r) => [el("div", { class: "l", text: r.name }),
+                   tipLine(spec.name.toLowerCase(), metricText(key, r.metrics[key]), "var(--data-dot)"),
+                   el("div", { class: "l", text: r.j + " jogos · liga " + metricText(key, league) })],
+    });
+  }
+
+  function renderReferee() {
+    const host = clear($("referee-body"));
+    const r = state.refById && state.refById.get(state.referee);
+    if (!r) { host.appendChild(el("div", { class: "empty", text: "Árbitro não encontrado nesta temporada." })); return; }
+    const d = state.refs, L = d.league, M = L.metrics, m = r.metrics;
+    const rounds = r.matches.map((x) => x.round).filter((x) => x !== null && x !== undefined);
+    const first = Math.min(...rounds), last = Math.max(...rounds);
+    const c = r.career;
+    host.appendChild(el("header", { class: "page-hero" },
+      el("span", { class: "page-hero__media" }, el("span", { class: "monogram", "aria-hidden": "true", text: initials(r.name) })),
+      el("div", {},
+        el("h1", { text: r.name }),
+        el("p", { class: "ooyl-sub", text: [
+          "Árbitro", r.j + (r.j === 1 ? " jogo" : " jogos") + " nesta temporada",
+          rounds.length ? (first === last ? "rodada " + first : `rodadas ${first} a ${last}`) : null,
+          c ? `na carreira, pelo SofaScore: ${fmt(c.games)} jogos, ${fmt(c.yellow)} amarelos, `
+            + `${fmt((c.red || 0) + (c.yellowRed || 0))} expulsões` : null,
+        ].filter(Boolean).join(" · ") }))));
+
+    const kpis = el("div", { class: "ooyl-tiles" });
+    tiles(kpis, [
+      ["Cartões por jogo", fmt(m.cards, 1), `liga ${fmt(M.cards, 1)} · ${fmt(pairSum(r.yellow))} amarelos, ${fmt(pairSum(r.reds))} expulsões`],
+      ["Faltas por jogo", fmt(m.fouls, 1), `liga ${fmt(M.fouls, 1)} · ${fmt(m.cardsPerFoul, 1)} cartões a cada 10 faltas`],
+      ["Pênaltis", fmt(pairSum(r.penalties)), `${fmt(m.penalties, 2)} por jogo · liga ${fmt(M.penalties, 2)}`],
+      ["Decisões do VAR", fmt(varTotal(r)), `${fmt(m.var, 2)} por jogo · liga ${fmt(M.var, 2)}`],
+      ["Acréscimo no 2º tempo", fmt(m.added2, 1),
+       `minutos em média; ${metricText("added1", m.added1)} no 1º tempo · liga ${fmt(M.added2, 1)} e ${fmt(M.added1, 1)}`],
+    ]);
+    host.appendChild(kpis);
+
+    const traits = el("div", {});
+    if (r.j < d.minGames) {
+      traits.appendChild(el("p", { class: "ref-note", text: `Com ${r.j} ${r.j === 1 ? "jogo" : "jogos"} a amostra ainda é pequena: `
+        + `o perfil é traçado a partir de ${d.minGames} jogos. Os números abaixo já valem como registro.` }));
+    } else if (!r.traits.length) {
+      traits.appendChild(el("p", { class: "ref-note", text: "Nenhum número se afasta do resto da liga mais do que o acaso "
+        + "explicaria com esses jogos: um árbitro no padrão da competição." }));
+    } else {
+      traits.appendChild(el("ul", { class: "ref-traits" }, r.traits.map((t) => el("li", { class: "ref-trait" },
+        el("span", { class: "ooyl-tag", title: `a ${fmt(Math.abs(t.z), 1)} erros-padrão do resto da liga`,
+                     text: (t.dir > 0 ? "▲ " : "▼ ") + traitName(t) }),
+        el("span", { text: traitSentence(t, r) })))));
+    }
+    const strip = el("div", {});
+    host.appendChild(cardBox("Perfil traçado", `Cada linha é um número deste árbitro (o ponto em destaque) entre os outros `
+      + `árbitros com ${d.minGames} jogos ou mais (pontos claros; passe o mouse para ver quem é), com a média da liga `
+      + "tracejada. Um traço entra no perfil quando a diferença para o resto da liga passa de duas vezes o erro esperado "
+      + "para o número de jogos dele, o que o acaso raramente produz. A barra à esquerda marca essas linhas.", traits, strip));
+    refStrip(strip, r);
+
+    host.appendChild(el("div", { class: "ref-pair" },
+      cardBox("Mando de campo", "Como o que ele marcou se dividiu entre mandante e visitante. Embaixo de cada linha, "
+        + "a parte do mandante com ele e na liga.", homeAway(r)),
+      cardBox("Decisões do VAR", `${fmt(varTotal(r))} ${varTotal(r) === 1 ? "decisão registrada" : "decisões registradas"} `
+        + `pelo SofaScore nos jogos dele, ${fmt(m.var, 2)} por jogo (liga ${fmt(M.var, 2)}).`, varList(r))));
+    host.appendChild(el("div", { class: "ref-pair" },
+      cardBox("Motivos dos cartões", "O motivo que o SofaScore registrou em cada cartão, com a parte de cada um "
+        + "nos cartões dele; ao lado, a mesma parte na liga.", reasonsList(r)),
+      cardBox("Minuto dos cartões", `Parte dos cartões em cada faixa de 15 minutos; o tracejado é a liga, e os acréscimos `
+        + `ficam na última faixa de cada tempo. Primeiro cartão aos ${metricText("firstCard", m.firstCard)} em média `
+        + `(liga ${metricText("firstCard", M.firstCard)}).`, minutesChart(r, d.buckets))));
+
+    const teams = el("table");
+    const teamHead = ["Time", "J", "V", "E", "D", "Cartões", "Por jogo", "Temporada", "Exp.", "Pên. a favor"];
+    teams.appendChild(el("thead", {}, el("tr", {}, teamHead.map((h, i) =>
+      el("th", { class: i === 0 ? "left" : "", text: h, title: REF_TITLES[h] || "" })))));
+    teams.appendChild(el("tbody", {}, r.teams.map((t) => {
+      const season = state.index && state.index.table.find((row) => row.team.id === t.team.id);
+      return el("tr", { class: "row-link", title: "abrir o time", onclick: () => go("#/time/" + t.team.id) },
+        el("td", { class: "left" }, crest(t.team), el("span", { text: t.team.name })),
+        el("td", { text: fmt(t.j) }), el("td", { text: fmt(t.v) }), el("td", { text: fmt(t.e) }), el("td", { text: fmt(t.d) }),
+        el("td", { class: "strong", text: fmt(t.cards) }), el("td", { text: fmt(t.cards / t.j, 1) }),
+        el("td", { class: "muted", text: season && season.j ? fmt(teamCards(season) / season.j, 1) : "-" }),
+        el("td", { text: fmt(t.reds) }), el("td", { text: fmt(t.penalties) }));
+    })));
+    host.appendChild(cardBox("Times", "Os jogos de cada time com este árbitro, do lado do time. Temporada é a média de "
+      + "cartões do time em todos os jogos, para comparar. Clique para abrir o time.", el("div", { class: "scroll" }, teams)));
+
+    const games = el("table", { class: "ref-games" });
+    const gameHead = ["Rod.", "Data", "Jogo", "Cartões", "Exp.", "Faltas", "Pên.", "VAR", "Acrésc."];
+    const gameTitles = { Cartões: "Cartões na partida, somando os dois times", "Acrésc.": "Acréscimo anunciado no 1º e no 2º tempo" };
+    games.appendChild(el("thead", {}, el("tr", {}, gameHead.map((h, i) =>
+      el("th", { class: i <= 2 ? "left" : "", text: h, title: gameTitles[h] || REF_TITLES[h] || "" })))));
+    games.appendChild(el("tbody", {}, r.matches.map((x) => el("tr", { class: "row-link", title: "abrir a partida", onclick: () => go("#/partida/" + x.id) },
+      el("td", { class: "left", text: String(x.round ?? "-") }),
+      el("td", { class: "left", text: dateOf(x.timestamp) }),
+      el("td", { class: "left" }, teamName(x.home), el("b", { class: "ref-score", text: `${x.gh}–${x.ga}` }), teamName(x.away)),
+      el("td", { class: "strong", title: `${x.cards[0]} para o mandante, ${x.cards[1]} para o visitante`, text: fmt(pairSum(x.cards)) }),
+      el("td", { text: fmt(pairSum(x.reds)) }),
+      el("td", { title: x.fouls ? `${x.fouls[0]} do mandante, ${x.fouls[1]} do visitante` : null, text: x.fouls ? fmt(pairSum(x.fouls)) : "-" }),
+      el("td", { text: fmt(pairSum(x.penalties)) }), el("td", { text: fmt(x.var) }),
+      el("td", { text: x.added.map((a) => a === null ? "-" : "+" + a).join(" / ") })))));
+    host.appendChild(cardBox("Partida a partida", "Cartões, expulsões, faltas e pênaltis somam os dois times; passe o mouse "
+      + "para ver a divisão. Clique numa linha para abrir a partida.", el("div", { class: "scroll" }, games)));
+  }
+
+  // Where the referee stands on each number: the others with enough matches as faint dots (the
+  // name on hover, a click opens them), the league mean dashed, this one in accent with the value
+  // at the end. Each row gets its own scale, fitted to the dots.
+  function refStrip(host, r) {
+    const d = state.refs, peers = qualifiedRefs().filter((p) => p.id !== r.id);
+    const box = el("div", { class: "ref-strip" });
+    Object.entries(REF_METRICS).forEach(([key, spec]) => {
+      const mine = r.metrics[key], league = d.league.metrics[key];
+      if (mine === null) return;
+      const others = peers.filter((p) => p.metrics[key] !== null);
+      const all = [mine, ...others.map((p) => p.metrics[key]), ...(league !== null ? [league] : [])];
+      const lo = Math.min(...all), hi = Math.max(...all), pad = (hi - lo) * 0.06 || 1;
+      const x = (v) => (100 * (v - lo + pad)) / (hi - lo + 2 * pad);
+      const plot = el("span", { class: "ref-strip__plot" },
+        league !== null ? el("span", { class: "ooyl-dotplot__ref", style: `left:${x(league)}%` }) : null);
+      others.forEach((p) => {
+        const dot = el("i", { class: "ref-strip__peer", style: `left:${x(p.metrics[key])}%` });
+        dot.addEventListener("pointermove", (ev) => showTip(ev.clientX, ev.clientY, [el("div", { class: "l", text: p.name }),
+          tipLine(spec.name.toLowerCase(), metricText(key, p.metrics[key]), "var(--data-context)"),
+          el("div", { class: "l", text: p.j + " jogos · clique para abrir" })]));
+        dot.addEventListener("pointerleave", hideTip);
+        dot.addEventListener("click", () => { hideTip(); go("#/arbitro/" + p.id); });
+        plot.appendChild(dot);
+      });
+      plot.appendChild(el("i", { class: "ref-strip__me", style: `left:${x(mine)}%` }));
+      box.appendChild(el("div", { class: "ref-strip__row" + (r.traits.some((t) => t.metric === key) ? " is-trait" : "") },
+        el("span", { class: "ref-strip__name" }, el("b", { text: spec.name, title: spec.name }),
+          el("small", { text: league !== null ? "liga " + metricText(key, league) : "" })),
+        plot,
+        el("span", { class: "ref-strip__val", text: metricText(key, mine) })));
+    });
+    host.appendChild(box);
+  }
+
+  // Home against away in the match view's comparison rows. Each side's count, the split as bars,
+  // and underneath the home share with this referee and across the league.
+  function homeAway(r) {
+    const L = state.refs.league;
+    const share = (p) => pairSum(p) ? fmt((100 * p[0]) / pairSum(p), 0) + "%" : "-";
+    const rows = [
+      ["Cartões recebidos", r.cards, L.cards],
+      ["Expulsões", r.reds, L.reds],
+      ["Faltas cometidas", r.fouls, L.fouls],
+      ["Pênaltis a favor", r.penalties, L.penalties],
+      ["Vitórias", [r.results[0], r.results[2]], [L.results[0], L.results[2]],
+       r.results[1] + (r.results[1] === 1 ? " empate" : " empates")],
+    ];
+    return el("div", { class: "ooyl-compare" },
+      el("div", { class: "ooyl-compare__legend" },
+        el("span", { class: "tname" }, el("i", { class: "swatch", style: "background:var(--home)" }), el("span", { text: "Mandante" })),
+        el("span", { class: "tname" }, el("span", { text: "Visitante" }), el("i", { class: "swatch", style: "background:var(--away)" }))),
+      rows.map(([name, mine, league, extra]) => {
+        const [h, a] = mine, total = h + a;
+        const lead = h === a ? "" : h > a ? "home" : "away";
+        return el("div", { class: "ooyl-compare__row" },
+          el("span", { class: "ooyl-compare__v is-home" + (lead === "home" ? " is-lead" : ""), text: fmt(h) }),
+          el("span", { class: "ooyl-compare__name" }, name,
+            el("small", { text: `mandante ${share(mine)} · liga ${share(league)}` + (extra ? " · " + extra : "") })),
+          el("span", { class: "ooyl-compare__v is-away" + (lead === "away" ? " is-lead" : ""), text: fmt(a) }),
+          el("div", { class: "ooyl-compare__bars", "aria-hidden": "true" },
+            el("span", { class: "ooyl-compare__half is-home" }, el("i", { class: lead !== "away" ? "is-lead" : null, style: `width:${total ? (100 * h) / total : 0}%` })),
+            el("span", { class: "ooyl-compare__half is-away" }, el("i", { class: lead !== "home" ? "is-lead" : null, style: `width:${total ? (100 * a) / total : 0}%` }))));
+      }));
+  }
+
+  function varList(r) {
+    const host = el("div", {}), L = state.refs.league;
+    const rows = Object.entries(r.var).map(([kind, n]) => ({ kind, n }));
+    if (!rows.length) { host.appendChild(el("div", { class: "empty", text: "Nenhuma decisão do VAR registrada nos jogos dele." })); return host; }
+    barList(host, rows, {
+      label: "Decisões do VAR", value: (x) => x.n, text: (x) => fmt(x.n), name: (x) => VAR_KINDS[x.kind] || x.kind,
+      tip: (x) => [el("div", { class: "l", text: VAR_KINDS[x.kind] || x.kind }), tipLine("decisões", fmt(x.n), "var(--data-dot)"),
+                   el("div", { class: "l", text: `${fmt(x.n / r.j, 2)} por jogo · liga ${fmt((L.var[x.kind] || 0) / L.j, 2)}` })],
+    });
+    return host;
+  }
+
+  function reasonsList(r) {
+    const host = el("div", {}), L = state.refs.league;
+    const total = Object.values(r.reasons).reduce((a, b) => a + b, 0);
+    const leagueTotal = Object.values(L.reasons).reduce((a, b) => a + b, 0);
+    const pct = (n, of) => of ? fmt((100 * n) / of, 0) + "%" : "-";
+    const rows = Object.entries(r.reasons).map(([kind, n]) => ({ kind, n }));
+    if (!rows.length) { host.appendChild(el("div", { class: "empty", text: "Nenhum cartão nos jogos dele." })); return host; }
+    barList(host, rows, {
+      label: "Motivos dos cartões", value: (x) => x.n, text: (x) => `${fmt(x.n)} · ${pct(x.n, total)}`,
+      name: (x) => reasonName(x.kind), note: (x) => "liga " + pct(L.reasons[x.kind] || 0, leagueTotal),
+      tip: (x) => [el("div", { class: "l", text: reasonName(x.kind) }), tipLine("cartões", fmt(x.n), "var(--data-dot)"),
+                   el("div", { class: "l", text: `${pct(x.n, total)} dos cartões dele · ${pct(L.reasons[x.kind] || 0, leagueTotal)} na liga` })],
+    });
+    return host;
+  }
+
+  // Columns in HTML, as the ranking bars: the share of the referee's cards in each 15 minutes, the
+  // busiest in accent, the league's share as a dashed mark across the column.
+  function minutesChart(r, buckets) {
+    const L = state.refs.league;
+    const total = r.minutes.reduce((a, b) => a + b, 0), leagueTotal = L.minutes.reduce((a, b) => a + b, 0);
+    if (!total) return el("div", { class: "empty", text: "Nenhum cartão nos jogos dele." });
+    const mine = r.minutes.map((n) => n / total), league = L.minutes.map((n) => leagueTotal ? n / leagueTotal : 0);
+    const top = Math.max(...mine, ...league) * 1.08, lead = mine.indexOf(Math.max(...mine));
+    return el("div", { class: "ref-minutes", role: "img", "aria-label": "Parte dos cartões em cada faixa de 15 minutos: "
+      + mine.map((s, i) => `${bucketName(buckets, i)} ${fmt(100 * s, 0)}%`).join(", ") },
+      mine.map((s, i) => {
+        const col = el("div", { class: "ref-minutes__col" + (i === lead ? " is-lead" : "") },
+          el("span", { class: "ref-minutes__plot" },
+            el("i", { class: "ref-minutes__bar", style: `height:${(100 * s) / top}%` }),
+            el("i", { class: "ref-minutes__league", style: `bottom:${(100 * league[i]) / top}%` })),
+          el("span", { class: "ref-minutes__val", text: fmt(100 * s, 0) + "%" }),
+          el("span", { class: "ref-minutes__label", text: bucketName(buckets, i) }));
+        col.addEventListener("pointermove", (ev) => showTip(ev.clientX, ev.clientY, [
+          el("div", { class: "l", text: "Minutos " + bucketName(buckets, i) }),
+          tipLine("cartões", `${fmt(r.minutes[i])} (${fmt(100 * s, 0)}%)`, "var(--data-dot)"),
+          el("div", { class: "l", text: "liga: " + fmt(100 * league[i], 0) + "% dos cartões" })]));
+        col.addEventListener("pointerleave", hideTip);
+        return col;
+      }));
   }
 
   // ---- desempenho individual -----------------------------------------------
@@ -2434,8 +2887,8 @@
     const when = sim.updated ? new Date(sim.updated * 1000).toLocaleDateString("pt-BR",
       { day: "2-digit", month: "2-digit", year: "numeric" }) : "data desconhecida";
     $("sim-sub").textContent = `${fmt(info.played)} jogos disputados, ${fmt(info.remaining)} a simular e `
-      + `${fmt(sim.runs)} temporadas sorteadas. For\u00e7a de ataque e defesa de cada time pelos gols e pelo xG, `
-      + `com as rodadas recentes pesando mais. Calend\u00e1rio lido em ${when}.`;
+      + `${fmt(sim.runs)} temporadas sorteadas. For\u00e7a de ataque e defesa de cada time pelo xG e pelos gols, `
+      + `descontando os advers\u00e1rios enfrentados, com os jogos recentes pesando mais. Calend\u00e1rio lido em ${when}.`;
     $("sim-reload").onclick = () => openSim(true);
 
     const champion = sim.table[0];
@@ -2523,6 +2976,7 @@
 
   async function openTeam(id) {
     setView("time");
+    state.teamShots.match = "";  // a match of the previous team means nothing here
     clear($("team-body")).appendChild(el("div", { class: "empty", text: "Carregando time..." }));
     try {
       const res = await fetch("/api/team/" + id);
@@ -2560,6 +3014,10 @@
       el("span", { class: "ooyl-player__meta" }, rateChip(p.avg)),
       el("span", { class: "ooyl-player__marks", text: p.avg != null ? starts : "sem nota · " + starts }));
   }
+  // The team page: the hero, then three sections under line tabs, each with its own route
+  // #/time/{id}/{aba}. Filters inside a tab redraw only that tab.
+  const TTABS = ["escalacoes", "shotmap", "distancia"];
+  const TTAB_NAMES = { escalacoes: "Escalações", shotmap: "Shotmap", distancia: "Distância percorrida" };
   function renderTeam() {
     const t = state.team;
     const host = clear($("team-body"));
@@ -2572,12 +3030,28 @@
           ? `${row.pos}º · ${row.pts} pontos · ${row.j} jogos (${row.v}V ${row.e}E ${row.d}D) · formações: `
             + t.formations.map((f) => `${f.formation} (${f.count})`).join(", ")
           : `${t.matches} jogos` }))));
+    host.appendChild(el("div", { class: "ooyl-tabs ooyl-tabs--line", role: "tablist", "aria-label": "Seções do time" },
+      TTABS.map((key) => el("button", { class: "ooyl-tab", role: "tab", "aria-selected": String(state.teamTab === key),
+        onclick: () => go(`#/time/${t.team.id}/${key}`) }, TTAB_NAMES[key]))));
+    host.appendChild(el("div", { class: "view", id: "team-tab" }));
+    renderTeamTab();
+  }
+  function renderTeamTab() {
+    const t = state.team, host = clear($("team-tab"));
+    // A dashboard.py started before these tabs existed sends the elevens only.
+    const stale = () => host.appendChild(el("section", { class: "ooyl-card" }, el("div", { class: "empty",
+      text: "O servidor em execução é anterior a esta aba: reinicie o dashboard.py para ver os dados." })));
+    if (state.teamTab === "shotmap") return t.shots ? renderTeamShots(host, t) : stale();
+    if (state.teamTab === "distancia") return t.runners ? renderTeamDistance(host, t) : stale();
+    renderTeamLineups(host, t);
+  }
+  function renderTeamLineups(host, t) {
     const card = el("section", { class: "ooyl-card" },
       el("div", { class: "ooyl-tabs ooyl-tabs--line", role: "tablist", "aria-label": "Escalação" },
         el("button", { class: "ooyl-tab", role: "tab", "aria-selected": String(state.teamMode === "frequent"),
-          onclick: () => { state.teamMode = "frequent"; renderTeam(); } }, "Escalação mais usada"),
+          onclick: () => { state.teamMode = "frequent"; renderTeamTab(); } }, "Escalação mais usada"),
         el("button", { class: "ooyl-tab", role: "tab", "aria-selected": String(state.teamMode === "recent"),
-          onclick: () => { state.teamMode = "recent"; renderTeam(); } }, "Mais recente")));
+          onclick: () => { state.teamMode = "recent"; renderTeamTab(); } }, "Mais recente")));
     const xi = state.teamMode === "frequent" ? t.frequent : t.recent;
     if (!xi || !xi.starters.length) {
       card.appendChild(el("div", { class: "empty", text: "Sem escalação completa registrada." }));
@@ -2755,7 +3229,10 @@
     const m = state.match;
     const host = clear($("match-head"));
     const meta = [m.timestamp ? new Date(m.timestamp * 1000).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : null,
-      m.venue, m.referee ? "Árbitro: " + m.referee : null].filter(Boolean).join(" · ");
+      m.venue].filter(Boolean).join(" · ");
+    // The referee's name opens the profile in Arbitragem when the payload carries the id.
+    const referee = m.referee ? ["Árbitro: ", m.refereeId
+      ? el("a", { href: "#/arbitro/" + m.refereeId, title: "abrir o perfil do árbitro", text: m.referee }) : m.referee] : null;
     // The side ticks are home and away, the same colors as every comparison below.
     const team = (t, which) => el("div", { class: "ooyl-scoreboard__team is-" + which },
       which === "away" ? crest(t, true) : null,
@@ -2774,7 +3251,7 @@
           el("span", { text: String(m.score.home) }), el("i", { "aria-hidden": "true", text: "–" }), el("span", { text: String(m.score.away) })),
         team(m.away, "away")),
       ht ? el("div", { class: "ooyl-scoreboard__ht", text: `intervalo ${m.score.htHome}–${m.score.htAway}` }) : null,
-      meta ? el("div", { class: "ooyl-scoreboard__meta", text: meta }) : null));
+      meta || referee ? el("div", { class: "ooyl-scoreboard__meta" }, meta, meta && referee ? " · " : null, referee) : null));
   }
 
   function renderMatchBody() {
@@ -2996,8 +3473,9 @@
 
   // ---- shotmap -------------------------------------------------------------
   const PITCH = { W: 1000, ux: 15.44, uy: 10 };
-  const SHOT_LABEL = { goal: "Gol", save: "Defendido", miss: "Para fora", block: "Bloqueado" };
-  const SITUATION = { regular: "jogada normal", assisted: "jogada assistida", corner: "escanteio", "set-piece": "bola parada", "fast-break": "contra-ataque", penalty: "pênalti" };
+  const SHOT_LABEL = { goal: "Gol", save: "Defendido", miss: "Para fora", block: "Bloqueado", post: "Na trave", "blocked-off-line": "Salvo em cima da linha" };
+  const SITUATION = { regular: "jogada normal", assisted: "jogada assistida", corner: "escanteio", "set-piece": "bola parada", "fast-break": "contra-ataque", penalty: "pênalti",
+                      "free-kick": "cobrança de falta", "throw-in-set-piece": "lateral" };
   const BODY = { "right-foot": "pé direito", "left-foot": "pé esquerdo", head: "cabeça", other: "outro" };
 
   // depth: quantas unidades de comprimento mostrar a partir da linha de fundo. O campo
@@ -3110,9 +3588,9 @@
     host.appendChild(wrap);
   }
 
-  function legendMark(type) {
+  function legendMark(type, tone) {
     const svg = el("svg", { width: 16, height: 16, viewBox: "0 0 16 16", "aria-hidden": "true" });
-    const ink = css("--ink-muted");
+    const ink = tone || css("--ink-muted");
     if (type === "goal") {
       svg.appendChild(el("circle", { cx: 8, cy: 8, r: 4.5, fill: ink }));
       svg.appendChild(el("circle", { cx: 8, cy: 8, r: 7, fill: "none", stroke: ink, "stroke-width": 1.5 }));
@@ -3125,6 +3603,302 @@
       svg.appendChild(el("circle", { cx: 8, cy: 8, r: 1.6, fill: ink }));
     }
     return svg;
+  }
+
+  // ---- time: shotmap da temporada ------------------------------------------
+  // As finalizações do time na temporada inteira ou num jogo só, com um filtro por desfecho e um de
+  // xG alto. Um lado só, então nada de cores de casa e fora: as marcas são data-dot e os gols accent.
+  // O campo é cortado na finalização mais distante do recorte (a temporada ou o jogo) e não muda de
+  // tamanho ao trocar de filtro. Gols contra ficam fora: o SofaScore lista o gol contra no lado que ele
+  // favoreceu, mas ninguém daquele time finalizou. Uma nota ao lado da tabela os conta.
+  const HIGH_XG = 0.3;
+  const ON_TARGET = new Set(["goal", "save", "blocked-off-line"]);  // o "no alvo" do SofaScore
+  const SHOT_FILTERS = [
+    { key: "todos", label: "Todas", hint: "Todas as finalizações", test: () => true },
+    { key: "goal", label: "Gols", hint: "Finalizações que viraram gol", test: (s) => s.type === "goal" },
+    { key: "save", label: "Defendidas", hint: "Finalizações defendidas pelo goleiro", test: (s) => s.type === "save" },
+    { key: "miss", label: "Para fora", hint: "Finalizações para fora, inclusive as que bateram na trave",
+      test: (s) => s.type === "miss" || s.type === "post" },
+    { key: "block", label: "Bloqueadas", hint: "Finalizações bloqueadas, inclusive as tiradas em cima da linha",
+      test: (s) => s.type === "block" || s.type === "blocked-off-line" },
+    { key: "xg", label: "xG alto", hint: `Finalizações com xG de ${fmt(HIGH_XG, 2)} ou mais: as chances mais claras`,
+      test: (s) => (s.xg || 0) >= HIGH_XG },
+  ];
+  const minuteOf = (s) => s.time == null ? "" : s.time + (s.added ? "+" + s.added : "") + "'";
+  const shotWords = (s) => [SHOT_LABEL[s.type] || s.type, SITUATION[s.situation] || s.situation, BODY[s.body] || s.body]
+    .filter(Boolean).join(", ");
+  const gameLabel = (g) => `Rodada ${g.round ?? "?"} · ${g.opponent.name} (${g.home ? "casa" : "fora"}) ${g.gf}–${g.ga}`;
+  const counted = (n, one, many) => `${fmt(n)} ${n === 1 ? one : many}`;
+
+  function renderTeamShots(host, t) {
+    const opt = state.teamShots;
+    const games = new Map(t.games.map((g) => [g.match, g]));
+    const game = (opt.match && games.get(Number(opt.match))) || null;
+    if (!game) opt.match = "";
+    const filter = SHOT_FILTERS.find((f) => f.key === opt.filter) || SHOT_FILTERS[0];
+    const scoped = game ? t.shots.filter((s) => s.match === game.match) : t.shots;
+    const shown = scoped.filter(filter.test);
+    const scope = game ? [game] : t.games;
+    const total = (list, f) => list.reduce((a, x) => a + (f(x) || 0), 0);
+    const mine = { shots: scoped.length, onTarget: scoped.filter((s) => ON_TARGET.has(s.type)).length,
+                   goals: scoped.filter((s) => s.type === "goal").length, xg: total(scoped, (s) => s.xg) };
+    const theirs = { shots: total(scope, (g) => g.against.shots), onTarget: total(scope, (g) => g.against.onTarget),
+                     goals: total(scope, (g) => g.against.goals), xg: total(scope, (g) => g.against.xg) };
+    const colors = { ink: css("--data-dot"), accent: css("--accent"), pitch: css("--pitch") };
+
+    const pick = el("select", { "aria-label": "Jogo", onchange: (ev) => { opt.match = ev.target.value; renderTeamTab(); } },
+      el("option", { value: "", text: "Temporada inteira" }),
+      t.games.slice().reverse().map((g) => el("option", { value: String(g.match), text: gameLabel(g) })));
+    pick.value = opt.match;
+    const sub = game
+      ? [`Rodada ${game.round ?? "?"}, ${game.home ? "em casa" : "fora"}: ${game.gf}–${game.ga} contra `, teamName(game.opponent),
+         `. xG ${fmt(mine.xg, 2)} a ${fmt(theirs.xg, 2)}.`]
+      : `${counted(mine.shots, "finalização", "finalizações")} em ${counted(t.games.length, "jogo", "jogos")}, `
+        + `${fmt(mine.xg, 1)} de xG. Escolha um jogo para ver só as dele.`;
+    const card = el("section", { class: "ooyl-card team-shots" },
+      el("header", { class: "ooyl-card__head" },
+        el("div", { class: "ooyl-card__titles" }, el("h2", { class: "ooyl-headline", text: "Shotmap" }), el("p", { class: "ooyl-sub" }, sub)),
+        el("div", { class: "ooyl-card__actions" }, pick)));
+
+    const strip = el("div", { class: "ooyl-tabs ooyl-tabs--segmented shot-filter", role: "tablist", "aria-label": "Filtrar finalizações" },
+      SHOT_FILTERS.map((f) => el("button", { class: "ooyl-tab", role: "tab", "aria-selected": String(f === filter), title: f.hint,
+        onclick: () => { opt.filter = f.key; renderTeamTab(); } }, f.label, el("span", { class: "n", text: fmt(scoped.filter(f.test).length) }))));
+
+    // The pitch is cut at the deepest shot of the season or of the game, filter aside, so a filter never
+    // resizes it. A single game gets the match view's mark sizes; a season of shots, smaller ones.
+    // Goals go on top, then saves, the bigger chances under the smaller.
+    const depth = Math.min(100, Math.max(40, Math.ceil(Math.max(0, ...scoped.map((s) => s.x || 0))) + 4));
+    const svg = pitchSvg(depth);
+    svg.setAttribute("aria-label", "Mapa de finalizações: " + t.team.name);
+    const layer = { goal: 3, save: 2 };
+    const marks = shown.filter((s) => s.x != null && s.y != null)
+      .sort((a, b) => (layer[a.type] || 1) - (layer[b.type] || 1) || (b.xg || 0) - (a.xg || 0))
+      .map((s) => teamShotMark(svg, s, !!game, colors));
+    let active = null;
+    const release = () => {
+      if (active) active.g.classList.remove("is-active");
+      active = null;
+      svg.classList.remove("is-hovering");
+      hideTip();
+    };
+    const hover = (ev) => {
+      const box = svg.getBoundingClientRect();
+      const mx = (ev.clientX - box.left) * (PITCH.W / box.width), my = (ev.clientY - box.top) * (depth * PITCH.ux / box.height);
+      let best = null, bd = Infinity;
+      marks.forEach((mk) => { const d = Math.hypot(mk.cx - mx, mk.cy - my); if (d < bd) { bd = d; best = mk; } });
+      if (!best || bd > best.r + 14) { release(); return; }
+      if (active !== best) {
+        if (active) active.g.classList.remove("is-active");
+        active = best;
+        best.g.classList.add("is-active");
+        svg.classList.add("is-hovering");
+      }
+      const s = best.s, g = games.get(s.match);
+      showTip(ev.clientX, ev.clientY, [
+        g ? el("div", { class: "l" }, `Rodada ${g.round ?? "?"} · ${g.home ? "casa" : "fora"}, contra `, teamName(g.opponent)) : null,
+        el("div", { class: "row" }, el("span", { class: "stroke", style: `background:${s.type === "goal" ? colors.accent : colors.ink}` }),
+          el("span", { class: "v", text: s.player || "" }), el("span", { class: "l", text: minuteOf(s) })),
+        tipLine("xG", fmt(s.xg, 2)),  // a few shots come without xG: "-"
+        el("div", { class: "l", text: shotWords(s) }),
+      ].filter(Boolean));
+    };
+    svg.addEventListener("pointermove", hover);
+    svg.addEventListener("pointerdown", hover);  // a tap on a phone, where there is no hover
+    svg.addEventListener("pointerleave", release);
+    const left = el("div", {}, strip, svg, el("p", { class: "ooyl-shotmap__note", text: shown.length
+      ? "Gol adversário no topo. O tamanho do círculo cresce com o xG da finalização."
+      : "Nenhuma finalização com esse filtro" + (game ? " neste jogo." : ".") }));
+
+    const side = el("div", { class: "ooyl-shotmap__side" },
+      el("div", { class: "ooyl-shotmap__legend" },
+        el("span", {}, legendMark("goal", colors.accent), el("span", { text: "Gol" })),
+        el("span", {}, legendMark("save", colors.ink), el("span", { text: "Defendido" })),
+        el("span", {}, legendMark("miss", colors.ink), el("span", { text: "Para fora ou na trave" })),
+        el("span", {}, legendMark("block", colors.ink), el("span", { text: "Bloqueado" }))));
+    // The whole scope, whatever the filter: the team against its opponents, as in the match view.
+    const digits = game ? 2 : 1, perShot = (x) => x.shots ? fmt(x.xg / x.shots, 2) : "-";
+    side.appendChild(el("table", {},
+      el("thead", {}, el("tr", {}, el("th", { class: "left" }),
+        el("th", {}, teamName({ name: t.team.code || t.team.short, logo: t.team.logo })),
+        el("th", { title: game ? game.opponent.name : "Adversários, somados" },
+          game ? teamName({ name: game.opponent.code || game.opponent.short, logo: game.opponent.logo }) : "Adv."))),
+      el("tbody", {}, [["Finalizações", fmt(mine.shots), fmt(theirs.shots)], ["No alvo", fmt(mine.onTarget), fmt(theirs.onTarget)],
+        ["Gols", fmt(mine.goals), fmt(theirs.goals)], ["xG", fmt(mine.xg, digits), fmt(theirs.xg, digits)],
+        ["xG por finalização", perShot(mine), perShot(theirs)]].map((r) => el("tr", {},
+          el("td", { class: "left", text: r[0] }), el("td", { text: r[1] }), el("td", { text: r[2] }))))));
+    const ownFor = total(scope, (g) => g.ownFor), ownAgainst = total(scope, (g) => g.ownAgainst);
+    if (ownFor || ownAgainst) {
+      side.appendChild(el("p", { class: "ooyl-sub", text: "Gols contra não entram no mapa nem na tabela: " + [
+        ownFor ? fmt(ownFor) + " a favor do time" : null,
+        ownAgainst ? fmt(ownAgainst) + (game ? " a favor do adversário" : " a favor dos adversários") : null,
+      ].filter(Boolean).join(" e ") + "." }));
+    }
+    if (game) side.appendChild(el("button", { class: "ooyl-btn ooyl-btn--sm", onclick: () => go(`#/partida/${game.match}/shotmap`) },
+      "Abrir a partida"));
+    card.appendChild(el("div", { class: "ooyl-shotmap" }, left, side));
+    host.appendChild(card);
+
+    // The biggest chances among the shots on the map: the first ten open, the rest behind a disclosure.
+    const ranked = shown.slice().sort((a, b) => (b.xg || 0) - (a.xg || 0));
+    const top = el("table"), rest = el("table");
+    chanceTable(top, ranked.slice(0, 10), 0, games, !game);
+    if (ranked.length > 10) chanceTable(rest, ranked.slice(10), 10, games, !game);
+    host.appendChild(cardBox("Maiores chances",
+      ranked.length ? `${ranked.length === 1 ? "A finalização do mapa" : `As ${fmt(ranked.length)} finalizações do mapa, da maior para a menor em xG`}. `
+        + "Clique numa linha para abrir a partida." : "",
+      ranked.length ? el("div", { class: "scroll" }, top) : el("div", { class: "empty", text: "Nenhuma finalização com esse filtro." }),
+      ranked.length > 10 ? el("details", {}, el("summary", { text: `Ver as outras ${fmt(ranked.length - 10)}` }),
+        el("div", { class: "scroll" }, rest)) : null));
+  }
+
+  // One shot of the team map: goal filled in accent with a ring, saved filled, off target hollow, blocked
+  // hollow with a dot, as in the match view. Filled marks sit at the scatter's 0.82, so overlaps read as density.
+  function teamShotMark(svg, s, big, colors) {
+    const cx = s.y * PITCH.uy, cy = s.x * PITCH.ux;
+    const size = Math.sqrt(Math.max(0, s.xg || 0));
+    const r = big ? 7 + size * 26 : 3.5 + size * 17;
+    const g = el("g", { class: "shot" });
+    if (s.type === "goal") {
+      g.appendChild(el("circle", { cx, cy, r, fill: colors.accent, stroke: colors.pitch, "stroke-width": big ? 3 : 1.5 }));
+      g.appendChild(el("circle", { cx, cy, r: r + (big ? 4 : 2.5), fill: "none", stroke: colors.accent, "stroke-width": big ? 2 : 1.5 }));
+    } else if (s.type === "save") {
+      g.appendChild(el("circle", { cx, cy, r, fill: colors.ink, "fill-opacity": 0.82, stroke: colors.pitch, "stroke-width": big ? 2 : 1 }));
+    } else {
+      g.appendChild(el("circle", { cx, cy, r, fill: "none", stroke: colors.ink, "stroke-opacity": 0.82, "stroke-width": big ? 2.5 : 1.5 }));
+      if (s.type === "block" || s.type === "blocked-off-line") g.appendChild(el("circle", { cx, cy, r: big ? 2.5 : 1.6, fill: colors.ink }));
+    }
+    svg.appendChild(g);
+    return { s, g, cx, cy, r };
+  }
+
+  function chanceTable(node, list, offset, games, withGame) {
+    const cols = [
+      { head: "#", cls: "left pos", cell: (s, i) => String(offset + i + 1) },
+      { head: "Jogador", cls: "left", cell: (s) => [face(playerById(s.playerId)), el("span", { text: s.player || "" })] },
+      ...(withGame ? [
+        { head: "Rod.", cls: "left", cell: (s) => String((games.get(s.match) || {}).round ?? "-") },
+        { head: "Adversário", cls: "left", cell: (s) => { const g = games.get(s.match); return g ? [crest(g.opponent), el("span", { text: g.opponent.name })] : "-"; } },
+      ] : []),
+      { head: "Min", cls: "", cell: (s) => minuteOf(s) },
+      { head: "Desfecho", cls: "left", cell: (s) => el("span", { class: "ooyl-tag" + (s.type === "goal" ? " ooyl-tag--accent" : ""), text: SHOT_LABEL[s.type] || s.type }) },
+      { head: "Jogada", cls: "left muted", cell: (s) => [SITUATION[s.situation] || s.situation, BODY[s.body] || s.body].filter(Boolean).join(", ") },
+      { head: "xG", cls: "strong", cell: (s) => fmt(s.xg, 2) },
+    ];
+    node.appendChild(el("thead", {}, el("tr", {}, cols.map((c) => el("th", { class: c.cls.includes("left") ? "left" : "", text: c.head })))));
+    node.appendChild(el("tbody", {}, list.map((s, i) => el("tr", { class: "row-link", title: "abrir a partida", onclick: () => go(`#/partida/${s.match}/shotmap`) },
+      cols.map((c) => el("td", { class: c.cls }, c.cell(s, i)))))));
+  }
+
+  // ---- time: distância percorrida -------------------------------------------
+  // O total do time em cada partida é o "Distance covered" das estatísticas do SofaScore, e quem correu
+  // vem do kilometersCovered de cada jogador na escalação. Jogos sem esse número ficam fora das somas e
+  // das médias, e a página diz em quantos ele existe. A liga (média e posição) vem de index.distance.
+  function renderTeamDistance(host, t) {
+    const measured = t.games.filter((g) => g.km != null);
+    if (!measured.length) {
+      host.appendChild(el("section", { class: "ooyl-card" }, el("div", { class: "empty",
+        text: "As estatísticas das partidas deste time não trazem a distância percorrida." })));
+      return;
+    }
+    const league = state.index.distance || null;  // absent: a dashboard.py started before this tab
+    const ranked = league ? league.teams.filter((r) => r.perGame != null) : [];
+    const rank = ranked.findIndex((r) => r.team.id === t.team.id) + 1;
+    const km = measured.reduce((a, g) => a + g.km, 0), per = km / measured.length;
+    const theirs = measured.reduce((a, g) => a + g.kmAgainst, 0) / measured.length, gap = per - theirs;
+    const sprinted = t.games.filter((g) => g.sprints != null);
+    const sprints = sprinted.length ? sprinted.reduce((a, g) => a + g.sprints, 0) / sprinted.length : null;
+    const kpis = el("div", { class: "ooyl-tiles" });
+    const unmeasured = t.games.length - measured.length;
+    tiles(kpis, [
+      ["Distância total", fmt(km, 0), unmeasured
+        ? `km em ${fmt(measured.length)} de ${counted(t.games.length, "jogo", "jogos")}; ${unmeasured === 1 ? "um ficou" : fmt(unmeasured) + " ficaram"} sem a medição`
+        : `km em ${counted(measured.length, "jogo", "jogos")}`],
+      ["Por jogo", fmt(per, 1), league && league.avg != null ? `km; a média da liga é ${fmt(league.avg, 1)}` : "km"],
+      ["Na liga", rank ? rank + "º" : "–", rank ? `entre ${ranked.length} times, pela média por jogo` : "sem a tabela da liga"],
+      ["Adversários", fmt(theirs, 1), `km por jogo; o time correu ${fmt(Math.abs(gap), 1)} km ${gap >= 0 ? "a mais" : "a menos"}`],
+      ["Sprints por jogo", sprints == null ? "–" : fmt(sprints, 0),
+        league && league.sprintsAvg != null ? `a média da liga é ${fmt(league.sprintsAvg, 0)}` : ""],
+    ]);
+    host.appendChild(kpis);
+
+    const chart = el("div"), table = el("table");
+    host.appendChild(cardBox("Distância por jogo", "Quilômetros percorridos pelo time em cada partida, somando todos os jogadores."
+      + (league && league.avg != null ? " A linha tracejada é a média da liga por time e por jogo." : ""),
+      chart, el("details", {}, el("summary", { text: "Ver dados em tabela" }), el("div", { class: "scroll" }, table))));
+    distanceChart(chart, measured, league);
+    distanceTable(table, t.games);
+
+    const board = el("div"), full = el("table");
+    host.appendChild(cardBox("Quem mais correu", "Distância somada de cada jogador nas partidas por este time. "
+      + "Os quilômetros por 90 minutos aparecem só para quem jogou ao menos 90.",
+      board, el("details", {}, el("summary", { text: "Ver dados em tabela" }), el("div", { class: "scroll" }, full))));
+    const rated = (p) => !!playerById(p.id);  // only rated players have a season page
+    barList(board, t.runners.slice(0, 10), {
+      label: "Distância percorrida por jogador", value: (p) => p.km, text: (p) => fmt(p.km, 1) + " km",
+      name: (p) => p.name || "", note: (p) => p.games + "j", face: (p) => p.face, logo: () => t.team.logo,
+      open: (p) => rated(p) ? "#/jogador/" + p.id : null,
+      tip: (p) => [el("div", { class: "l", text: p.name || "" }), tipLine("km", fmt(p.km, 1), "var(--data-dot)"),
+        el("div", { class: "l", text: `${counted(p.games, "jogo", "jogos")}, ${fmt(p.minutes)} minutos` }),
+        p.minutes >= 90 ? el("div", { class: "l", text: fmt((p.km / p.minutes) * 90, 2) + " km por 90 minutos" }) : null,
+        el("div", { class: "l", text: `${fmt(p.sprints)} sprints · máxima de ${fmt(p.topSpeed, 1)} km/h` })].filter(Boolean),
+    });
+    runnersTable(full, t.runners, rated);
+  }
+
+  // Km per round against the league mean. The axis fits the data in steps of 5 (10 for a wide spread).
+  function distanceChart(host, measured, league) {
+    const pts = measured.filter((g) => g.round != null).sort((a, b) => a.round - b.round || a.timestamp - b.timestamp);
+    const avg = league && league.avg != null ? league.avg : null;
+    const vals = pts.map((g) => g.km).concat(avg == null ? [] : [avg]);
+    const spread = Math.max(...vals) - Math.min(...vals), step = spread > 30 ? 10 : 5;
+    const lo = Math.floor((Math.min(...vals) - 1) / step) * step, hi = Math.ceil((Math.max(...vals) + 1) / step) * step;
+    const last = pts[pts.length - 1];
+    lineChart(host, {
+      label: "Distância percorrida por rodada", empty: "Sem distância registrada.", yMin: lo, yMax: hi, yStep: step,
+      height: 260, dots: true, lastLabel: last ? fmt(last.km, 1) + " km" : null,
+      reference: avg == null ? null : { value: avg, label: "média da liga " + fmt(avg, 1) },
+      points: pts.map((g) => ({ x: g.round, y: g.km, tip: () => [
+        el("div", { class: "l" }, `Rodada ${g.round} · ${g.home ? "casa" : "fora"}, ${g.gf}-${g.ga} contra `, teamName(g.opponent)),
+        tipLine("km do time", fmt(g.km, 1), "var(--data-dot)"),
+        el("div", { class: "l", text: `adversário: ${fmt(g.kmAgainst, 1)} km` }),
+        g.sprints != null ? el("div", { class: "l", text: `${fmt(g.sprints)} sprints, contra ${fmt(g.sprintsAgainst)} do adversário` }) : null,
+      ].filter(Boolean) })),
+    });
+  }
+
+  const DISTANCE_TITLES = {
+    Km: "Distância percorrida pelo time, somando todos os jogadores", "Km adv.": "Distância percorrida pelo adversário",
+    "Dif.": "Km do time menos km do adversário", Sprints: "Número de sprints do time", "Sprints adv.": "Número de sprints do adversário",
+    J: "Partidas com distância medida", Min: "Minutos nessas partidas", "Km/90": "Quilômetros a cada 90 minutos em campo",
+    "Vel. máx.": "Maior velocidade registrada numa partida, em km/h",
+  };
+  function distanceTable(node, games) {
+    const head = ["Rod.", "Adversário", "Local", "Placar", "Km", "Km adv.", "Dif.", "Sprints", "Sprints adv."];
+    node.appendChild(el("thead", {}, el("tr", {}, head.map((h, i) => el("th", { class: i <= 3 ? "left" : "", text: h, title: DISTANCE_TITLES[h] || "" })))));
+    const gap = (g) => g.km == null ? "-" : (g.km >= g.kmAgainst ? "+" : "−") + fmt(Math.abs(g.km - g.kmAgainst), 1);
+    node.appendChild(el("tbody", {}, games.slice().sort((a, b) => (a.round ?? 99) - (b.round ?? 99) || a.timestamp - b.timestamp)
+      .map((g) => el("tr", { class: "row-link", title: "abrir a partida", onclick: () => go("#/partida/" + g.match) },
+        el("td", { class: "left", text: String(g.round ?? "-") }),
+        el("td", { class: "left" }, crest(g.opponent), el("span", { text: g.opponent.name })),
+        el("td", { class: "left", text: g.home ? "casa" : "fora" }),
+        el("td", { class: "left " + (g.gf > g.ga ? "win" : g.gf < g.ga ? "lose" : ""), text: `${g.gf}-${g.ga}` }),
+        el("td", { class: "strong", text: fmt(g.km, 1) }), el("td", { text: fmt(g.kmAgainst, 1) }),
+        el("td", { class: "muted", text: gap(g) }),
+        el("td", { text: fmt(g.sprints) }), el("td", { text: fmt(g.sprintsAgainst) })))));
+  }
+
+  function runnersTable(node, runners, rated) {
+    const head = ["#", "Jogador", "Pos", "J", "Min", "Km", "Km/90", "Sprints", "Vel. máx."];
+    node.appendChild(el("thead", {}, el("tr", {}, head.map((h, i) => el("th", { class: i <= 2 ? "left" : "", text: h, title: DISTANCE_TITLES[h] || PLAYER_TITLES[h] || "" })))));
+    node.appendChild(el("tbody", {}, runners.map((p, i) => el("tr", rated(p)
+      ? { class: "row-link", title: "abrir a temporada do jogador", onclick: () => go("#/jogador/" + p.id) } : {},
+      el("td", { class: "left pos", text: String(i + 1) }),
+      el("td", { class: "left" }, face(p), el("span", { text: p.name || "" })),
+      el("td", { class: "left", text: POS_CODE[p.position] || "-" }),
+      el("td", { text: fmt(p.games) }), el("td", { text: fmt(p.minutes) }),
+      el("td", { class: "strong", text: fmt(p.km, 1) }),
+      el("td", { text: p.minutes >= 90 ? fmt((p.km / p.minutes) * 90, 2) : "-" }),
+      el("td", { text: fmt(p.sprints) }), el("td", { text: fmt(p.topSpeed, 1) })))));
   }
 
   // ---- admin view ----------------------------------------------------------
@@ -3544,6 +4318,14 @@
     renderFilters();
     renderMatchList();
     if (state.view === "estatisticas") renderLeaders();
+    state.refs = null;  // a new match changes every referee's numbers: read them again
+    state.refById = null;
+    if (state.view === "arbitragem" || state.view === "arbitro") {
+      loadReferees().then(() => {
+        if (state.view === "arbitragem") renderReferees();
+        if (state.view === "arbitro") renderReferee();
+      }).catch(() => {});
+    }
   }
 
   // ---- shell ---------------------------------------------------------------
@@ -3559,10 +4341,10 @@
   }
   function setView(view) {
     state.view = view;
-    ["temporada", "partidas", "times", "time", "estatisticas", "jogadores", "jogador", "selecao", "simulador",
-     "partida", "admin"].forEach((v) => { $("view-" + v).hidden = v !== view; });
+    ["temporada", "partidas", "times", "time", "estatisticas", "jogadores", "jogador", "selecao", "arbitragem", "arbitro",
+     "simulador", "partida", "admin"].forEach((v) => { $("view-" + v).hidden = v !== view; });
     // A detail page keeps its section's tab lit: a team under Times, a match under Partidas.
-    syncTabs($("main-tabs"), "view", { time: "times", partida: "partidas", jogador: "jogadores" }[view] || view);
+    syncTabs($("main-tabs"), "view", { time: "times", partida: "partidas", jogador: "jogadores", arbitro: "arbitragem" }[view] || view);
     hideTip();
     refreshCharts();  // a chart drawn while its view was hidden gets its real width now
     adminPoll(view === "admin");  // o painel so consulta o servidor enquanto esta aberto
@@ -3610,6 +4392,8 @@
       return;
     }
     if (parts[0] === "simulador") { openSim(); return; }
+    if (parts[0] === "arbitragem") { openReferees(); return; }
+    if (parts[0] === "arbitro" && parts[1]) { openReferee(Number(parts[1])); return; }
     if (parts[0] === "estatisticas") {
       state.stab = STABS.includes(parts[1]) ? parts[1] : "times";
       setView("estatisticas");
@@ -3618,8 +4402,9 @@
       return;
     }
     if (parts[0] === "times") { setView("times"); renderTeams(); return; }
-    if (parts[0] === "time" && parts[1]) {
+    if (parts[0] === "time" && parts[1]) {  // #/time/{id}/shotmap and #/time/{id}/distancia open those tabs
       const id = Number(parts[1]);
+      state.teamTab = TTABS.includes(parts[2]) ? parts[2] : "escalacoes";
       if (state.team && state.team.team.id === id) { setView("time"); renderTeam(); } else openTeam(id);
       return;
     }
@@ -3652,6 +4437,7 @@
   });
   $("back").addEventListener("click", () => go("#/partidas"));
   $("player-back").addEventListener("click", () => go("#/jogadores"));
+  $("referee-back").addEventListener("click", () => go("#/arbitragem"));
   $("team-back").addEventListener("click", () => go("#/times"));
   $("sim-modes").addEventListener("click", (ev) => {
     const btn = ev.target.closest('[role="tab"]');
@@ -3670,6 +4456,8 @@
     if (state.view === "jogador" && state.player) renderPlayer();
     if (state.view === "selecao") renderSelecao();
     if (state.view === "time" && state.team) renderTeam();
+    if (state.view === "arbitragem" && state.refs) renderReferees();
+    if (state.view === "arbitro" && state.refs) renderReferee();
   }
 
   async function boot() {
