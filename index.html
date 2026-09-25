@@ -19,6 +19,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Out of Your League · Brasileirão Série A</title>
+<link rel="icon" href="marca/favicon.ico" sizes="32x32">
+<link rel="icon" href="marca/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="marca/apple-touch-icon.png">
 <script>
   // The saved edition goes on before first paint, so the page never flashes the other one.
   try {
@@ -256,6 +259,7 @@
     min-height: var(--topbar-height); display: flex; align-items: stretch; gap: var(--space-5);
   }
   .ooyl-topbar__brand { display: flex; align-items: center; gap: var(--space-3); color: var(--ink-strong); text-decoration: none; flex: none; border-radius: var(--radius-sm); }
+  .ooyl-topbar__brand svg { width: 28px; height: 28px; flex: none; }
   .ooyl-topbar__title .ooyl-kicker { line-height: 1; }  /* the brand, above the league's name */
   .ooyl-topbar__title { display: flex; flex-direction: column; line-height: 1; gap: 4px; }
   .ooyl-topbar__name { font: 800 15px/1 var(--font-display); text-transform: uppercase; }
@@ -319,6 +323,32 @@
   @media (max-width: 640px) {
     .ooyl-tabs--segmented { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); width: 100%; }
     .ooyl-tabs--segmented .ooyl-tab { height: auto; min-height: 32px; padding: 6px var(--space-2); white-space: normal; line-height: 1.2; }
+  }
+  /* Page sections (Partidas, Estatísticas, Arbitragem, Simulador): the page's own navigation, so line tabs across
+     the width in the edition's headline voice. A small segmented control there read as one more filter, the same
+     as the Intensidade switch right under it in Estatísticas > Distância. The lit section is filled with `action`
+     (lime in Floodlight, ink in Broadsheet, as the primary button) and sits on the rule. Phones split the width
+     equally, as segmented controls do, so no section hides past the edge. */
+  .ooyl-tabs--page .ooyl-tab {
+    min-height: 52px; padding: 0 var(--space-4); border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    font-family: var(--ooyl-head-font); font-weight: var(--ooyl-head-weight); text-transform: var(--ooyl-head-case);
+    letter-spacing: var(--ooyl-head-track); font-size: calc(14px * var(--ooyl-head-scale));
+    transition: color .12s ease, background-color .12s ease;
+  }
+  .ooyl-tabs--page .ooyl-tab:hover { background: var(--surface-hover); }
+  .ooyl-tabs--page .ooyl-tab[aria-selected="true"] { background: var(--action); color: var(--on-action); }
+  .ooyl-tabs--page .ooyl-tab::after { left: 0; right: 0; }
+  .ooyl-tabs--page .ooyl-tab[aria-selected="true"]::after { background: var(--action); }
+  @media (max-width: 640px) {
+    .view > .ooyl-tabs--page {
+      display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 0;
+      overflow: visible; padding-right: 0; -webkit-mask-image: none; mask-image: none;
+    }
+    .view > .ooyl-tabs--page .ooyl-tab {
+      min-height: 44px; padding: 8px var(--space-2); white-space: normal; line-height: 1.2;
+      font-size: calc(12px * var(--ooyl-head-scale));
+    }
+    .view > .ooyl-tabs--page .ooyl-tab::after { left: 0; right: 0; }
   }
 
   /* ---- buttons ------------------------------------------------------------ */
@@ -1039,6 +1069,8 @@
 <header class="ooyl-topbar">
   <div class="ooyl-topbar__in">
     <a class="ooyl-topbar__brand" href="#/temporada" title="Out of Your League">
+      <!-- The mark (marca/): the ring and the point that has left it, in the edition's colors. -->
+      <svg class="ooyl-mark" viewBox="0 0 64 64" width="28" height="28" aria-hidden="true"><circle cx="26" cy="38" r="18" style="fill: none; stroke: var(--data-dot); stroke-width: 8"/><circle cx="51" cy="13" r="9" style="fill: var(--accent)"/></svg>
       <span class="ooyl-topbar__title">
         <span class="ooyl-kicker">Out of Your League</span>
         <span class="ooyl-topbar__name">Brasileirão</span>
@@ -1116,7 +1148,7 @@
 
   <!-- PARTIDAS -->
   <section id="view-partidas" class="view" hidden>
-    <div class="ooyl-tabs ooyl-tabs--segmented" id="match-modes" role="tablist" aria-label="Partidas">
+    <div class="ooyl-tabs ooyl-tabs--line ooyl-tabs--page" id="match-modes" role="tablist" aria-label="Partidas">
       <button class="ooyl-tab" role="tab" data-mmode="resultados" aria-selected="true">Resultados</button>
       <button class="ooyl-tab" role="tab" data-mmode="proximas" aria-selected="false">Próximas rodadas</button>
     </div>
@@ -1191,7 +1223,7 @@
 
   <!-- ESTATISTICAS: lideres da temporada, por time e por jogador -->
   <section id="view-estatisticas" class="view" hidden>
-    <div class="ooyl-tabs ooyl-tabs--segmented" id="stats-tabs" role="tablist" aria-label="Líderes">
+    <div class="ooyl-tabs ooyl-tabs--line ooyl-tabs--page" id="stats-tabs" role="tablist" aria-label="Líderes">
       <button class="ooyl-tab" role="tab" data-stab="times" aria-selected="true">Times</button>
       <button class="ooyl-tab" role="tab" data-stab="jogadores" aria-selected="false">Jogadores</button>
       <button class="ooyl-tab" role="tab" data-stab="distancia" aria-selected="false">Distância</button>
@@ -1243,7 +1275,7 @@
 
   <!-- ARBITRAGEM: os arbitros da temporada, com os tracos de perfil de cada um, e a previsao de cartoes -->
   <section id="view-arbitragem" class="view" hidden>
-    <div class="ooyl-tabs ooyl-tabs--segmented" id="ref-tabs" role="tablist" aria-label="Arbitragem">
+    <div class="ooyl-tabs ooyl-tabs--line ooyl-tabs--page" id="ref-tabs" role="tablist" aria-label="Arbitragem">
       <button class="ooyl-tab" role="tab" data-rtab="arbitros" aria-selected="true">Árbitros</button>
       <button class="ooyl-tab" role="tab" data-rtab="cartoes" aria-selected="false">Previsão de cartões</button>
     </div>
@@ -1312,7 +1344,7 @@
 
   <!-- SIMULADOR -->
   <section id="view-simulador" class="view" hidden>
-    <div class="ooyl-tabs ooyl-tabs--segmented" id="sim-modes" role="tablist" aria-label="Modo do simulador">
+    <div class="ooyl-tabs ooyl-tabs--line ooyl-tabs--page" id="sim-modes" role="tablist" aria-label="Modo do simulador">
       <button class="ooyl-tab" role="tab" data-smode="manual" aria-selected="true">Simular rodada a rodada</button>
       <button class="ooyl-tab" role="tab" data-smode="prob" aria-selected="false">Probabilidades do modelo</button>
     </div>
