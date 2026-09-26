@@ -1094,6 +1094,7 @@
   .info-panel .ooyl-sub a:hover { text-decoration-color: currentColor; }
   /* Para quem torcer: one row per game of the round, the team's chance after each result, the best for it
      tinted in `good`; on phones the clubs' three-letter codes and no "Torça" column (the tint says it). */
+  .compare-odds { margin-top: var(--space-3); max-width: 76ch; }
   .rooting td { vertical-align: middle; }
   .rooting__game { display: inline-flex; align-items: center; gap: 6px; font: 600 14px/1.3 var(--font-sans); color: var(--ink-strong); }
   .rooting__game i { margin: 0 2px; font-style: normal; font-weight: 400; color: var(--ink-muted); }
@@ -1580,6 +1581,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     player: null, playerMap: null, sel: null, selPick: null, team: null, teamMode: "frequent",
     teamTab: "resumo", teamShots: { match: "", filter: "todos" },  // Times: page tab; shotmap scope ("" = season) and filter
     oddsInfo: false,  // Times > Resumo: the (i) with how the forecast is made, open or closed
+    compareWith: null,  // Times > Comparar: the other team's id (null: the next opponent)
     simMode: "manual", simPicks: null, simManRound: 0, simError: null,  // simError: why /api/simulacao failed (team Resumo)
     refs: null, refById: null, referee: null, refMetric: "cards",  // Arbitragem: /api/referees, the open profile, the compared number
     rtab: "arbitros", cards: null, cardsRound: null,  // Arbitragem sub-tab, /api/cards and the round the forecast shows
@@ -3652,8 +3654,9 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
   }
   // The team page: the hero, then four sections under line tabs, each with its own route
   // #/time/{slug}/{aba} (teamHref); Resumo opens it. Filters inside a tab redraw only that tab.
-  const TTABS = ["resumo", "escalacoes", "shotmap", "distancia"];
-  const TTAB_NAMES = { resumo: "Resumo", escalacoes: "Escalações", shotmap: "Shotmap", distancia: "Distância percorrida" };
+  const TTABS = ["resumo", "comparar", "escalacoes", "shotmap", "distancia"];
+  const TTAB_NAMES = { resumo: "Resumo", comparar: "Comparar", escalacoes: "Escalações", shotmap: "Shotmap",
+                       distancia: "Distância percorrida" };
   function renderTeam() {
     const t = state.team;
     const host = clear($("team-body"));
@@ -3677,6 +3680,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     const stale = () => host.appendChild(el("section", { class: "ooyl-card" }, el("div", { class: "empty",
       text: "O servidor em execução é anterior a esta aba: reinicie o dashboard.py para ver os dados." })));
     if (state.teamTab === "resumo") return renderTeamSummary(host, t);
+    if (state.teamTab === "comparar") return renderTeamCompare(host, t);
     if (state.teamTab === "shotmap") return t.shots ? renderTeamShots(host, t) : stale();
     if (state.teamTab === "distancia") return t.runners ? renderTeamDistance(host, t) : stale();
     renderTeamLineups(host, t);
@@ -4146,6 +4150,208 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     svg.addEventListener("pointerleave", () => { hair.setAttribute("opacity", 0); dot.setAttribute("opacity", 0); hideTip(); });
     host.appendChild(svg);
     charts.get(host).width = host.clientWidth;
+  }
+
+  // ---- time: comparar -------------------------------------------------------
+  // Two teams side by side, the page's team on the left in the home color: a scoreboard of how many rows each
+  // one leads, their games this season and the ones left with the model's odds, then the table, attack,
+  // defence, style, the simulation and the players, the better side of each row lit as in a match's
+  // Estatísticas. The other team is the next opponent until one is picked (#/time/gremio/comparar/inter);
+  // its page payload (/api/team) brings its per-game statistics (teams.py AVERAGED).
+  const teamPayloads = new Map();  // id -> /api/team payload of Comparar's other side, dropped when the data changes
+  function loadTeamPayload(id) {
+    return fetch("/api/team/" + id).then((res) => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    }).then((payload) => { teamPayloads.set(id, payload); return payload; });
+  }
+
+  // The next opponent; without one, the team just above in the table (just below for the leader).
+  function defaultRival(id, entry) {
+    const next = entry && entry.next && entry.next.opponent;
+    if (next && state.index.table.some((r) => r.team.id === next.id)) return next.id;
+    const rows = state.index.table, at = rows.findIndex((r) => r.team.id === id);
+    return (rows[at > 0 ? at - 1 : at + 1] || rows[0]).team.id;
+  }
+
+  // Points per game at home and away, and in the last five games, from /api/index's matches.
+  function formSplits(id) {
+    const games = state.index.matches.filter((m) => m.home.id === id || m.away.id === id)
+      .sort((x, y) => (x.timestamp || 0) - (y.timestamp || 0));
+    const points = (m) => {
+      const home = m.home.id === id, gf = home ? m.gh : m.ga, ga = home ? m.ga : m.gh;
+      return gf > ga ? 3 : gf === ga ? 1 : 0;
+    };
+    const perGame = (list) => list.length ? list.reduce((sum, m) => sum + points(m), 0) / list.length : null;
+    const last = games.slice(-5);
+    return { home: perGame(games.filter((m) => m.home.id === id)), away: perGame(games.filter((m) => m.away.id === id)),
+             last: last.length ? last.reduce((sum, m) => sum + points(m), 0) : null, of: 3 * last.length };
+  }
+
+  function renderTeamCompare(host, t) {
+    const id = t.team.id;
+    if (!state.sim && !state.simError) {  // the next opponent and the chances come from the simulation
+      host.appendChild(el("section", { class: "ooyl-card" }, el("div", { class: "empty", text: "Carregando a simulação do resto da temporada…" })));
+      loadSim().catch((err) => { state.simError = err.message; }).then(() => {
+        if (state.view === "time" && state.team === t && state.teamTab === "comparar") renderTeamTab();
+      });
+      return;
+    }
+    const sims = new Map(((state.sim && state.sim.table) || []).map((e) => [e.team.id, e]));
+    let other = state.compareWith;
+    if (other == null || other === id || !state.index.table.some((r) => r.team.id === other)) {
+      other = state.compareWith = defaultRival(id, sims.get(id));
+      showAddress(id, "comparar", other);  // the address names both teams, ready to be shared
+    }
+    const pick = el("select", { "aria-label": "Comparar com", onchange: (ev) => go(teamHref(id, "comparar", Number(ev.target.value))) },
+      state.index.table.filter((r) => r.team.id !== id).map((r) => el("option", { value: String(r.team.id), text: `${r.pos}º ${r.team.name}` })));
+    pick.value = String(other);
+    const head = (sub, ...body) => el("section", { class: "ooyl-card" },
+      el("header", { class: "ooyl-card__head" },
+        el("div", { class: "ooyl-card__titles" }, el("h2", { class: "ooyl-headline", text: "Comparar" }), el("p", { class: "ooyl-sub", text: sub })),
+        el("div", { class: "ooyl-card__actions" }, el("label", { class: "ctl", text: "com" }), pick)), ...body);
+    const theirs = other === id ? t : teamPayloads.get(other);
+    if (!theirs) {
+      const wait = el("div", { class: "empty", text: "Carregando o outro time…" });
+      host.appendChild(head("", wait));
+      loadTeamPayload(other).then(() => {
+        if (state.view === "time" && state.team === t && state.teamTab === "comparar" && state.compareWith === other) renderTeamTab();
+      }, (err) => { wait.className = "empty err"; wait.textContent = "Falha ao ler o outro time: " + err.message; });
+      return;
+    }
+
+    const a = t.team, b = theirs.team, row = (team) => state.index.table.find((r) => r.team.id === team.id) || null;
+    const ra = row(a), rb = row(b), fa = formSplits(a.id), fb = formSplits(b.id), sa = sims.get(a.id), sb = sims.get(b.id);
+    const per = (r, key) => r && r.j ? r[key] / r.j : null;
+    const avg = (payload, key, side = "for") => payload.averages && payload.averages[key] ? payload.averages[key][side] : null;
+    const accuracy = (payload) => { const all = avg(payload, "passes"); return all ? avg(payload, "accuratePasses") / all : null; };
+    const km = (team) => { const d = state.index.distance && state.index.distance.teams.find((r) => r.team.id === team.id); return d ? d.perGame : null; };
+    const squad = (team) => state.index.players.filter((p) => p.team === team.short);
+    const minGames = Math.max(1, Math.round(state.index.rounds.length / 3));
+    const top = (team, key, min = 0) => squad(team).filter((p) => p.j >= min && p[key] != null)
+      .reduce((best, p) => (!best || p[key] > best[key] ? p : best), null);
+    const player = (key, min) => {  // the team's leader in `key`, shown with the number
+      const pa = top(a, key, min), pb = top(b, key, min), digits = key === "avg" ? 2 : 0;
+      return { a: pa && pa[key], b: pb && pb[key], show: (v, side) => `${(side === "a" ? pa : pb).name} · ${fmt(v, digits)}` };
+    };
+    // a row's show(value, side) gets the side too, so none is fmt itself: its second argument is the digits
+    const n0 = (v) => fmt(v), n1 = (v) => fmt(v, 1), n2 = (v) => fmt(v, 2), ratio = (v) => fmt(v * 100, 0) + "%", share = (v) => fmt(v, 1) + "%";
+    const groups = [
+      { name: "Tabela e campanha", tally: true, rows: [
+        { name: "Posição", a: ra && ra.pos, b: rb && rb.pos, better: "low", show: (v) => v + "º", bars: false },
+        { name: "Pontos", a: ra && ra.pts, b: rb && rb.pts, better: "high", show: n0 },
+        { name: "Aproveitamento", a: ra && ra.j ? ra.pts / (3 * ra.j) : null, b: rb && rb.j ? rb.pts / (3 * rb.j) : null, better: "high", show: ratio },
+        { name: "Pontos por jogo em casa", a: fa.home, b: fb.home, better: "high", show: n2 },
+        { name: "Pontos por jogo fora", a: fa.away, b: fb.away, better: "high", show: n2 },
+        { name: "Pontos nos últimos 5 jogos", a: fa.last, b: fb.last, better: "high", show: (v, side) => `${v} de ${side === "a" ? fa.of : fb.of}` },
+      ] },
+      { name: "Ataque, por jogo", tally: true, rows: [
+        { name: "Gols", a: per(ra, "gp"), b: per(rb, "gp"), better: "high", show: n2 },
+        { name: "xG (gols esperados)", a: per(ra, "xg"), b: per(rb, "xg"), better: "high", show: n2 },
+        { name: "Finalizações", a: avg(t, "totalShotsOnGoal"), b: avg(theirs, "totalShotsOnGoal"), better: "high", show: n1 },
+        { name: "Finalizações no alvo", a: avg(t, "shotsOnGoal"), b: avg(theirs, "shotsOnGoal"), better: "high", show: n1 },
+        { name: "Grandes chances", a: avg(t, "bigChanceCreated"), b: avg(theirs, "bigChanceCreated"), better: "high", show: n1 },
+        { name: "Toques na área adversária", a: avg(t, "touchesInOppBox"), b: avg(theirs, "touchesInOppBox"), better: "high", show: n1 },
+        { name: "Escanteios", a: avg(t, "cornerKicks"), b: avg(theirs, "cornerKicks"), better: "high", show: n1 },
+      ] },
+      { name: "Defesa, por jogo", tally: true, rows: [
+        { name: "Gols sofridos", a: per(ra, "gc"), b: per(rb, "gc"), better: "low", show: n2 },
+        { name: "xG sofrido", a: per(ra, "xga"), b: per(rb, "xga"), better: "low", show: n2 },
+        { name: "Finalizações sofridas", a: avg(t, "totalShotsOnGoal", "against"), b: avg(theirs, "totalShotsOnGoal", "against"), better: "low", show: n1 },
+        { name: "Grandes chances cedidas", a: avg(t, "bigChanceCreated", "against"), b: avg(theirs, "bigChanceCreated", "against"), better: "low", show: n1 },
+        { name: "Jogos sem sofrer gol", a: ra && ra.cs, b: rb && rb.cs, better: "high", show: n0 },
+        { name: "Desarmes", a: avg(t, "totalTackle"), b: avg(theirs, "totalTackle"), better: "high", show: n1 },
+        { name: "Interceptações", a: avg(t, "interceptionWon"), b: avg(theirs, "interceptionWon"), better: "high", show: n1 },
+      ] },
+      { name: "Estilo e intensidade, por jogo", tally: true, rows: [
+        { name: "Posse de bola", a: avg(t, "ballPossession"), b: avg(theirs, "ballPossession"), better: "high", show: share },
+        { name: "Passes", a: avg(t, "passes"), b: avg(theirs, "passes"), better: "high", show: n0 },
+        { name: "Passes certos", a: accuracy(t), b: accuracy(theirs), better: "high", show: ratio },
+        { name: "Duelos ganhos", a: avg(t, "duelWonPercent"), b: avg(theirs, "duelWonPercent"), better: "high", show: share },
+        { name: "Distância percorrida", a: km(a), b: km(b), better: "high", show: (v) => fmt(v, 1) + " km" },
+        { name: "Faltas", a: avg(t, "fouls"), b: avg(theirs, "fouls"), better: "low", show: n1 },
+        { name: "Cartões", a: ra && ra.j ? teamCards(ra) / ra.j : null, b: rb && rb.j ? teamCards(rb) / rb.j : null, better: "low", show: n2 },
+      ] },
+      sa && sb ? { name: "Simulação do resto da temporada", tally: false, rows: [
+        ...Object.keys(RACES).filter((key) => raceChance(sa, key) > 0.00005 || raceChance(sb, key) > 0.00005).map((key) => ({
+          name: RACES[key].label, a: raceChance(sa, key), b: raceChance(sb, key), better: RACES[key].bad ? "low" : "high", show: pctText })),
+        { name: "Pontos no fim", a: sa.ptsProj, b: sb.ptsProj, better: "high", show: (v) => fmt(v, 0) },
+      ] } : null,
+      { name: "Destaques", tally: false, rows: [
+        { name: "Artilheiro", better: "high", ...player("goals") },
+        { name: "Assistências", better: "high", ...player("assists") },
+        { name: `Melhor nota média (${minGames}+ jogos)`, better: "high", ...player("avg", minGames) },
+      ] },
+    ].filter(Boolean);
+
+    const wins = { home: 0, away: 0 };
+    let counted = 0;
+    const box = el("div", { class: "ooyl-compare" },
+      el("div", { class: "ooyl-compare__legend" },
+        el("span", { class: "tname" }, el("i", { class: "swatch", style: "background:var(--home)" }), crest(a), el("span", { text: a.name })),
+        el("span", { class: "tname" }, el("span", { text: b.name }), crest(b), el("i", { class: "swatch", style: "background:var(--away)" }))));
+    groups.forEach((group) => {
+      box.appendChild(el("h3", { class: "ooyl-compare__group", text: group.name }));
+      group.rows.forEach((r) => {
+        const has = r.a != null && r.b != null && !Number.isNaN(r.a) && !Number.isNaN(r.b);
+        const lead = !has || r.a === r.b ? "" : (r.better === "high" ? r.a > r.b : r.a < r.b) ? "home" : "away";
+        if (group.tally && has) { counted++; if (lead) wins[lead]++; }
+        const total = has && r.bars !== false ? Math.abs(r.a) + Math.abs(r.b) : 0;
+        const hs = total ? (Math.abs(r.a) / total) * 100 : 0, as = total ? (Math.abs(r.b) / total) * 100 : 0;
+        const text = (v, side) => v == null || Number.isNaN(v) ? "–" : r.show(v, side);
+        box.appendChild(el("div", { class: "ooyl-compare__row" },
+          el("span", { class: "ooyl-compare__v is-home" + (lead === "home" ? " is-lead" : ""), text: text(r.a, "a") }),
+          el("span", { class: "ooyl-compare__name", text: r.name }),
+          el("span", { class: "ooyl-compare__v is-away" + (lead === "away" ? " is-lead" : ""), text: text(r.b, "b") }),
+          total ? el("div", { class: "ooyl-compare__bars", "aria-hidden": "true" },
+            el("span", { class: "ooyl-compare__half is-home" }, el("i", { class: lead !== "away" ? "is-lead" : null, style: `width:${hs}%` })),
+            el("span", { class: "ooyl-compare__half is-away" }, el("i", { class: lead !== "home" ? "is-lead" : null, style: `width:${as}%` }))) : null));
+      });
+    });
+
+    // The scoreboard of the numbers: the match head's, with the rows each team leads for a score.
+    const side = (team, which) => el("div", { class: "ooyl-scoreboard__team is-" + which },
+      which === "away" ? crest(team, true) : null,
+      el("div", { class: "ooyl-scoreboard__name" }, el("h2", { class: "ooyl-headline" },
+          team.code ? el("span", { class: "ooyl-scoreboard__code", "aria-hidden": "true", text: team.code }) : null,
+          el("span", { class: "ooyl-scoreboard__full", text: team.name })),
+        el("i", { class: "ooyl-scoreboard__tick", style: `background:var(--${which})`, "aria-hidden": "true" })),
+      which === "home" ? crest(team, true) : null);
+    host.appendChild(head(`Lado a lado com o time desta página, na cor de mandante. Troque o outro na lista; o endereço `
+      + "guarda a comparação, pronto para mandar.",
+      el("div", { class: "ooyl-scoreboard" },
+        el("p", { class: "ooyl-kicker", text: "Placar dos números" }),
+        el("div", { class: "ooyl-scoreboard__row" }, side(a, "home"),
+          el("div", { class: "ooyl-scoreboard__score", "aria-label": `${a.name} ${wins.home}, ${b.name} ${wins.away}` },
+            el("span", { text: String(wins.home) }), el("i", { "aria-hidden": "true", text: "×" }), el("span", { text: String(wins.away) })),
+          side(b, "away")),
+        el("div", { class: "ooyl-scoreboard__meta", text: `Em quantos dos ${counted} números da temporada abaixo (tabela, ataque, `
+          + "defesa e estilo) cada time é melhor; empates e a simulação ficam fora da conta." }))));
+
+    // Their games: this season's, each opening its match, and the ones left with the model's odds.
+    const pair = (m) => (m.home.id === a.id && m.away.id === b.id) || (m.home.id === b.id && m.away.id === a.id);
+    const played = state.index.matches.filter(pair).sort((x, y) => (x.timestamp || 0) - (y.timestamp || 0));
+    const ahead = state.sim ? allSimMatches().filter(pair) : [];
+    if (played.length || ahead.length) {
+      const list = el("div", { class: "ooyl-matches" }, played.map((m) => {
+        const res = m.gh > m.ga ? "home" : m.gh < m.ga ? "away" : "draw";
+        const who = (team, which) => el("span", { class: `ooyl-match__side is-${which}` + (res === which ? " is-win" : res === "draw" ? " is-draw" : "") },
+          which === "home" ? [el("span", { text: team.name }), crest(team)] : [crest(team), el("span", { text: team.name })]);
+        return el("button", { class: "ooyl-match", onclick: () => go("#/partida/" + m.id) },
+          el("span", { class: "ooyl-match__when", text: "R" + (m.round ?? "?") }), who(m.home, "home"),
+          el("span", { class: "ooyl-match__score" }, el("span", { text: String(m.gh) }), el("i", { text: "–" }), el("span", { text: String(m.ga) })),
+          who(m.away, "away"), el("span", { class: "ooyl-match__end" }, "xG ", el("b", { text: fmt(m.xgh, 1) }), " – ", el("b", { text: fmt(m.xga, 1) })));
+      }), ahead.map((m) => simMatchNode(m)));
+      const odds = ahead.map((m) => `${dated(m) ? `${longDay(m.timestamp)}, ${timeOf(m.timestamp)}` : "sem data"}: `
+        + `${m.home.short || m.home.name} ${pctText(m.pHome)}, empate ${pctText(m.pDraw)}, ${m.away.short || m.away.name} ${pctText(m.pAway)}; `
+        + `placar mais provável ${m.score[0]}–${m.score[1]}.`);
+      host.appendChild(cardBox("Confronto direto", (played.length ? "Os jogos entre os dois nesta temporada, clique para abrir. " : "")
+        + (ahead.length ? "O que falta, com o placar mais provável e as chances do modelo." : ""),
+        list, odds.length ? el("p", { class: "ooyl-sub compare-odds", text: odds.join(" ") }) : null));
+    }
+    host.appendChild(cardBox("Lado a lado", "Na temporada, a maioria por jogo; em cada linha, o melhor dos dois aceso. Posse, passes, "
+      + "grandes chances, finalizações, duelos, desarmes e faltas são as estatísticas do SofaScore de cada partida; o xG é o do "
+      + "shotmap, o mesmo da classificação.", box));
   }
 
   // ---- match list ----------------------------------------------------------
@@ -5407,6 +5613,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     state.cards = null;
     state.sim = null;  // and every chance of the simulation: the Simulador and the team pages read it again
     state.simError = null;
+    teamPayloads.clear();  // and Comparar's other side
     if (state.view === "time" && state.team && state.teamTab === "resumo") renderTeam();
     if (state.view === "arbitragem" && state.rtab === "cartoes") openCards();
     else if (state.view === "arbitragem" || state.view === "arbitro") {
@@ -5452,7 +5659,8 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
   // A team page goes by the team's slug, the one of its short address (dashboard.build_index `slugs`):
   // #/time/gremio, #/time/gremio/shotmap. An id still opens it (old links) and gives way to the slug.
   const slugOf = (id) => (state.index && state.index.slugs && state.index.slugs[id]) || String(id);
-  const teamHref = (id, tab) => `#/time/${slugOf(id)}${tab && tab !== "resumo" ? "/" + tab : ""}`;
+  const teamHref = (id, tab, other) => `#/time/${slugOf(id)}${tab && tab !== "resumo" ? "/" + tab : ""}`
+    + (tab === "comparar" && other != null ? "/" + slugOf(other) : "");  // #/time/gremio/comparar/inter
   function teamOf(part) {
     if (/^\d+$/.test(part)) return Number(part);
     const slugs = (state.index && state.index.slugs) || {};
@@ -5468,11 +5676,11 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
   const HOME = location.pathname;
   const SHORT = typeof window.OOYL_SHORT === "string" ? window.OOYL_SHORT : null;
   if (SHORT) document.head.prepend(el("base", { href: HOME }));
-  function showAddress(team, tab) {
+  function showAddress(team, tab, other) {
     const slugs = (state.index && state.index.slugs) || {};
     let want = HOME + location.search + location.hash;
-    if (team != null && SHORT && slugs[team]) want = SHORT + slugs[team] + location.search + (tab === "resumo" ? "" : teamHref(team, tab));
-    else if (team != null) want = HOME + location.search + teamHref(team, tab);
+    if (team != null && SHORT && slugs[team]) want = SHORT + slugs[team] + location.search + (tab === "resumo" ? "" : teamHref(team, tab, other));
+    else if (team != null) want = HOME + location.search + teamHref(team, tab, other);
     if (want !== location.pathname + location.search + location.hash) history.replaceState(history.state, "", want);
   }
   // With the address on a short page, a link to "#/..." would leave for HOME: route it here instead.
@@ -5539,7 +5747,8 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       const id = teamOf(parts[1]);
       if (id == null) { go("#/times"); return; }  // a slug of no team of this league: the list of teams
       state.teamTab = TTABS.includes(parts[2]) ? parts[2] : "resumo";
-      showAddress(id, state.teamTab);
+      state.compareWith = state.teamTab === "comparar" && parts[3] ? teamOf(parts[3]) : null;  // null: the next opponent
+      showAddress(id, state.teamTab, state.compareWith);
       if (state.team && state.team.team.id === id) { setView("time"); renderTeam(); } else openTeam(id);
       return;
     }
