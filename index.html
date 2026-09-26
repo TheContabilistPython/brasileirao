@@ -36,7 +36,7 @@
   @font-face { font-family: "Archivo"; src: url("fonts/archivo.ttf") format("truetype"); font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; }
   @font-face { font-family: "Archivo Expanded"; src: url("fonts/archivo-expanded.ttf") format("truetype"); font-weight: 800; font-display: swap; }
   @font-face { font-family: "JetBrains Mono"; src: url("fonts/jetbrains-mono.ttf") format("truetype"); font-weight: 100 800; font-display: swap; }
-  @font-face { font-family: "Instrument Serif"; src: url("fonts/instrument-serif.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+  @font-face { font-family: "Newsreader"; src: url("fonts/newsreader.ttf") format("truetype"); font-weight: 200 800; font-display: swap; }
 
   /* ---- tokens: generated from the design system's tokens.json. Floodlight is the default edition;
      Broadsheet follows a light OS until the Tema button picks one. */
@@ -93,9 +93,9 @@
       color-scheme: light;
       --ooyl-head-font: var(--font-serif);
       --ooyl-head-case: none;
-      --ooyl-head-weight: 400;
+      --ooyl-head-weight: 600;
       --ooyl-head-track: -0.012em;
-      --ooyl-head-scale: 1.3;
+      --ooyl-head-scale: 1.05;
       --ooyl-rule: var(--ink);
       --ground: #f4efe6;
       --surface: #fbf8f2;
@@ -142,9 +142,9 @@
     color-scheme: light;
     --ooyl-head-font: var(--font-serif);
     --ooyl-head-case: none;
-    --ooyl-head-weight: 400;
+    --ooyl-head-weight: 600;
     --ooyl-head-track: -0.012em;
-    --ooyl-head-scale: 1.3;
+    --ooyl-head-scale: 1.05;
     --ooyl-rule: var(--ink);
     --ground: #f4efe6;
     --surface: #fbf8f2;
@@ -207,7 +207,7 @@
     --opacity-disabled: 0.45;
     --font-display: "Archivo Expanded", "Archivo", system-ui, sans-serif;
     --font-sans: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+    --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
     --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace;
   }
 
@@ -1056,6 +1056,101 @@
   .page-hero__media { display: flex; align-items: center; flex: none; }
   .page-hero__media .crest.lg { margin-left: -10px; width: 28px; height: 28px; align-self: flex-end; }
 
+  /* ---- team page, Resumo: the team's race first and lit in its tone (good or bad), the next match with
+     what each result changes, the points curve, the last five games, the games left and the season's curve */
+  .team-odds .ooyl-tile.is-good { --tone: var(--good); }
+  .team-odds .ooyl-tile.is-bad { --tone: var(--bad); }
+  .team-odds .ooyl-tile.is-focus { box-shadow: inset 0 3px 0 var(--tone), -1px 0 0 var(--line), 0 -1px 0 var(--line); }
+  .team-odds .ooyl-tile.is-focus .ooyl-tile__value { color: var(--tone); }
+  /* The (i) beside the lit tile's label: a small circle whose touch area reaches past it, so a finger finds it;
+     negative margins keep the label row as tall as its neighbours'. */
+  .info-dot {
+    position: relative; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px;
+    margin: -2px 0 -2px 8px; padding: 0; vertical-align: -1px; border: 1.5px solid currentColor; border-radius: 50%;
+    background: none; color: var(--ink-muted); font: 700 10.5px/1 var(--font-sans); letter-spacing: 0; text-transform: none;
+  }
+  .info-dot::after { content: ""; position: absolute; inset: -12px; }
+  .info-dot:hover, .info-dot[aria-expanded="true"] { color: var(--ink-strong); }
+  .info-dot:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .info-panel__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .info-steps { display: flex; flex-direction: column; gap: var(--space-2); max-width: 76ch; margin: 0 0 var(--space-4); padding-left: 20px;
+                font-size: 14px; line-height: 21px; color: var(--ink); }
+  .info-steps b { color: var(--ink-strong); font-weight: 600; }
+  .info-panel .ooyl-sub { max-width: 76ch; }
+  .info-panel .ooyl-sub a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+  .info-panel .ooyl-sub a:hover { text-decoration-color: currentColor; }
+  .team-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); align-items: start; }
+  @media (max-width: 900px) { .team-pair { grid-template-columns: minmax(0, 1fr); } }
+  .stakes-lead { margin: var(--space-4) 0 var(--space-3); max-width: 64ch; font-size: 14.5px; line-height: 21px; color: var(--ink); }
+  .stakes-lead b { color: var(--ink-strong); font-weight: 700; }
+  td.shift { font: 600 12px/20px var(--font-mono); color: var(--ink-muted); }
+  td.shift.is-better { color: var(--good); }
+  td.shift.is-worse { color: var(--bad); }
+  .pts-lead { margin: 0 0 var(--space-4); max-width: 64ch; font-size: 14.5px; line-height: 21px; color: var(--ink); }
+  .pts-lead b { color: var(--ink-strong); font-weight: 700; }
+  .pts-curve { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; }
+  .pts-curve__col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .pts-curve__val { text-align: center; font: 400 11px/1 var(--font-mono); color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pts-curve__plot { position: relative; height: 112px; border-bottom: 1px solid var(--line-strong); }
+  .pts-curve__bar { position: absolute; bottom: 0; left: 14%; right: 14%; min-height: 1px; border-radius: var(--radius-xs) var(--radius-xs) 0 0; background: var(--data-context); }
+  .pts-curve__pts { text-align: center; font: 600 12px/1 var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .pts-curve__col.is-mark .pts-curve__bar { background: var(--accent); }
+  .pts-curve__col.is-mark .pts-curve__val, .pts-curve__col.is-mark .pts-curve__pts { color: var(--ink-strong); font-weight: 700; }
+  .pts-curve__axis { margin-top: var(--space-2); text-align: center; font-size: 12px; color: var(--ink-muted); }
+  .form-strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-2); }
+  .form-game {
+    display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0; padding: 0 2px var(--space-3);
+    background: none; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; color: var(--ink);
+  }
+  .form-game:hover { border-color: var(--line-strong); background: var(--surface-hover); }
+  .form-game__res { align-self: stretch; padding: 5px 0; text-align: center; font: 800 12px/1 var(--font-display); letter-spacing: 0.04em; }
+  .form-game.is-win .form-game__res { background: var(--good); color: var(--on-accent); }
+  .form-game.is-draw .form-game__res { background: var(--data-context); color: var(--ink-strong); }
+  .form-game.is-loss .form-game__res { background: var(--bad); color: var(--on-accent); }
+  .form-game__score { font: 800 17px/1 var(--font-display); color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+  .form-game__meta { display: flex; flex-direction: column; font: 400 11px/1.35 var(--font-mono); color: var(--ink-muted); text-align: center; }
+  .next-game {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: start; gap: var(--space-3);
+    padding: var(--space-4) 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  }
+  .next-game__side { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; text-align: center;
+                     font: 600 14px/1.25 var(--font-sans); color: var(--ink-strong); overflow-wrap: anywhere; }
+  .next-game__mid { display: flex; flex-direction: column; align-items: center; gap: 7px; padding-top: 2px; }
+  .next-game__time {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 72px; height: 32px; padding: 0 10px;
+    border-radius: var(--radius-xs); box-shadow: inset 0 0 0 1px var(--line-strong); font: 600 15px/1 var(--font-mono); color: var(--ink-strong);
+  }
+  .next-game__day { font: 400 11.5px/1.2 var(--font-mono); color: var(--ink-muted); white-space: nowrap; }
+  .runin-row {
+    display: grid; grid-template-columns: 52px 40px minmax(0, 1fr) 150px; align-items: center; gap: var(--space-3);
+    min-height: 50px; padding: 6px var(--space-1); border-bottom: 1px solid var(--line);
+  }
+  .runin-row:last-child { border-bottom: 0; }
+  .runin-row__venue { font: 600 10px/1 var(--font-sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+  .runin-row__opp { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; min-width: 0; }
+  .runin-row__name {
+    background: none; border: 0; padding: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font: 600 14px/1.3 var(--font-sans); color: var(--ink-strong); text-align: left; border-radius: var(--radius-xs);
+  }
+  .runin-row__name:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .runin-row .ooyl-odds { min-width: 0; }
+  .ooyl-odds__bar .w { background: var(--good); }
+  .ooyl-odds__bar .l { background: var(--bad); }
+  .form-game:focus-visible, .runin-row__name:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .ooyl-chart .band { opacity: 0.1; }
+  .ooyl-chart .band.lib { fill: var(--zone-libertadores); }
+  .ooyl-chart .band.sul { fill: var(--zone-sudamericana); }
+  .ooyl-chart .band.reb { fill: var(--zone-relegation); }
+  .runin-row__wide { white-space: pre; }
+  @media (max-width: 640px) {
+    .runin-row__wide { display: none; }  /* "direto" alone: the card's subtitle says what it means */
+    .runin-row { grid-template-columns: 40px 32px minmax(0, 1fr) 100px; gap: var(--space-2); }
+    .runin-row__name { font-size: 13px; }
+    .form-strip { gap: 4px; }
+    .form-game__score { font-size: 15px; }
+    .form-game__meta { font-size: 10px; }
+  }
+
   .empty { color: var(--ink-muted); padding: var(--space-5) 0; }
   .err { color: var(--bad); }
 
@@ -1064,6 +1159,23 @@
     .ref-minutes__bar, .ref-strip__me { forced-color-adjust: none; border: 1px solid ButtonText; }
   }
 </style>
+<meta name="description" content="Brasileirão Série A em dados: tabela com xG, chances de título, Libertadores e rebaixamento na simulação do resto da temporada, partidas, escalações e estatísticas dos jogadores.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Out of Your League">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="https://www.outofyourleague.com.br/serie-a/">
+<meta property="og:title" content="Brasileirão Série A em dados · Out of Your League">
+<meta property="og:description" content="Tabela com xG, chances de título, Libertadores e rebaixamento, partidas, escalações e estatísticas dos jogadores, atualizados a cada rodada.">
+<meta property="og:image" content="https://www.outofyourleague.com.br/marca/compartilhamento.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@ooyl_br">
+<script>
+window.goatcounter = { path: () => location.pathname + location.hash };
+window.addEventListener("hashchange", () => window.goatcounter.count && window.goatcounter.count({ path: location.pathname + location.hash }));
+</script>
+<script data-goatcounter="https://ooyl.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </head>
 <body>
 <header class="ooyl-topbar">
@@ -1106,7 +1218,7 @@
       <header class="ooyl-card__head">
         <div class="ooyl-card__titles">
           <h2 class="ooyl-headline">Classificação</h2>
-          <p class="ooyl-sub">Pontos corridos calculados a partir das partidas coletadas. xG somado do shotmap. Clique num time para abrir suas escalações e elenco.</p>
+          <p class="ooyl-sub">Pontos corridos calculados a partir das partidas coletadas. xG somado do shotmap. Clique num time para abrir a página dele.</p>
         </div>
       </header>
       <div class="scroll"><table id="standings"></table></div>
@@ -1214,7 +1326,7 @@
       <header class="ooyl-card__head">
         <div class="ooyl-card__titles">
           <h2 class="ooyl-headline">Times</h2>
-          <p class="ooyl-sub">Na ordem da classificação. Clique para ver a escalação mais usada, a mais recente e o elenco por nota.</p>
+          <p class="ooyl-sub">Na ordem da classificação. Clique para abrir o time: as chances na simulação, o próximo jogo, a reta final, as escalações, o shotmap e a distância percorrida.</p>
         </div>
       </header>
       <div id="teams-list"></div>
@@ -1450,8 +1562,9 @@
     distPos: "", distMeasure: "total",  // Estatísticas > Distância: position filter ("" = all) and total or per 90,
     distBand: "km", distOpen: {},       // the intensity band ("km" = all of it) and which tables are open
     player: null, playerMap: null, sel: null, selPick: null, team: null, teamMode: "frequent",
-    teamTab: "escalacoes", teamShots: { match: "", filter: "todos" },  // Times: page tab; shotmap scope ("" = season) and filter
-    simMode: "manual", simPicks: null, simManRound: 0,
+    teamTab: "resumo", teamShots: { match: "", filter: "todos" },  // Times: page tab; shotmap scope ("" = season) and filter
+    oddsInfo: false,  // Times > Resumo: the (i) with how the forecast is made, open or closed
+    simMode: "manual", simPicks: null, simManRound: 0, simError: null,  // simError: why /api/simulacao failed (team Resumo)
     refs: null, refById: null, referee: null, refMetric: "cards",  // Arbitragem: /api/referees, the open profile, the compared number
     rtab: "arbitros", cards: null, cardsRound: null,  // Arbitragem sub-tab, /api/cards and the round the forecast shows
     admin: null, adminSeq: 0, adminLog: [], adminTimer: null, adminOn: false,
@@ -3521,10 +3634,10 @@
       el("span", { class: "ooyl-player__meta" }, rateChip(p.avg)),
       el("span", { class: "ooyl-player__marks", text: p.avg != null ? starts : "sem nota · " + starts }));
   }
-  // The team page: the hero, then three sections under line tabs, each with its own route
-  // #/time/{id}/{aba}. Filters inside a tab redraw only that tab.
-  const TTABS = ["escalacoes", "shotmap", "distancia"];
-  const TTAB_NAMES = { escalacoes: "Escalações", shotmap: "Shotmap", distancia: "Distância percorrida" };
+  // The team page: the hero, then four sections under line tabs, each with its own route
+  // #/time/{id}/{aba}; Resumo opens it. Filters inside a tab redraw only that tab.
+  const TTABS = ["resumo", "escalacoes", "shotmap", "distancia"];
+  const TTAB_NAMES = { resumo: "Resumo", escalacoes: "Escalações", shotmap: "Shotmap", distancia: "Distância percorrida" };
   function renderTeam() {
     const t = state.team;
     const host = clear($("team-body"));
@@ -3534,8 +3647,7 @@
       el("div", {},
         el("h1", { text: t.team.name }),
         el("p", { class: "ooyl-sub", text: row
-          ? `${row.pos}º · ${row.pts} pontos · ${row.j} jogos (${row.v}V ${row.e}E ${row.d}D) · formações: `
-            + t.formations.map((f) => `${f.formation} (${f.count})`).join(", ")
+          ? `${row.pos}º · ${row.pts} pontos · ${row.j} jogos (${row.v}V ${row.e}E ${row.d}D)`
           : `${t.matches} jogos` }))));
     host.appendChild(el("div", { class: "ooyl-tabs ooyl-tabs--line", role: "tablist", "aria-label": "Seções do time" },
       TTABS.map((key) => el("button", { class: "ooyl-tab", role: "tab", "aria-selected": String(state.teamTab === key),
@@ -3548,6 +3660,7 @@
     // A dashboard.py started before these tabs existed sends the elevens only.
     const stale = () => host.appendChild(el("section", { class: "ooyl-card" }, el("div", { class: "empty",
       text: "O servidor em execução é anterior a esta aba: reinicie o dashboard.py para ver os dados." })));
+    if (state.teamTab === "resumo") return renderTeamSummary(host, t);
     if (state.teamTab === "shotmap") return t.shots ? renderTeamShots(host, t) : stale();
     if (state.teamTab === "distancia") return t.runners ? renderTeamDistance(host, t) : stale();
     renderTeamLineups(host, t);
@@ -3567,7 +3680,8 @@
         ? [`Formação ${xi.formation}, usada em ${xi.count} de ${xi.of} jogos. Em cada posição, quem mais vezes começou nela. O chip é a nota média do jogador na temporada.`]
         : [`Rodada ${xi.round}, ${xi.home ? "" : "fora, "}${xi.gf}-${xi.ga} contra `, teamName(xi.opponent),
            `, formação ${xi.formation || "?"}. O chip é a nota média do jogador na temporada.`];
-      card.appendChild(el("p", { class: "ooyl-sub", style: "margin:0 0 var(--space-4)" }, sub));
+      card.appendChild(el("p", { class: "ooyl-sub", style: "margin:0 0 var(--space-4)" }, sub,
+        t.formations.length ? " Formações na temporada: " + t.formations.map((f) => `${f.formation} (${f.count})`).join(", ") + "." : ""));
       const pitch = el("div", { class: "ooyl-pitch team-pitch" }, turf());
       xiRows(xi.formation, xi.starters).forEach((r) => { if (r.length) pitch.appendChild(el("div", { class: "ooyl-pitch__row" }, r.map(teamPlayerNode))); });
       card.appendChild(pitch);
@@ -3582,6 +3696,381 @@
     host.appendChild(cardBox("Elenco por nota média", "Todos com nota na temporada por este time. Clique para abrir o jogador.",
       el("div", { class: "scroll" }, table)));
     playerTable(table, squad, 40);
+  }
+
+  // ---- time: resumo ---------------------------------------------------------
+  // The team on one phone screen, for a fan who arrives from a link (outofyourleague.com.br/gremio): the
+  // chance that matters to the team and the other three, what its next match can change, how many points
+  // are enough, the last five games, the games left with their odds and the season's curve. The chances
+  // come from the simulation (simulation.py: each team's focus, next and points), the rest from /api/index.
+  const RACES = {  // the fates simulation.py follows for every team (its EVENTS); `short` heads a narrow column
+    title: { label: "Título", short: "Título", note: "terminar em 1º", chance: "chance de título", curve: "Chance de título",
+             reach: "é campeão" },
+    g6: { label: "Libertadores", short: "G6", note: "terminar entre os 6 primeiros", chance: "chance de Libertadores",
+          curve: "Chance de Libertadores", reach: "vai à Libertadores" },
+    g12: { label: "Vaga continental", short: "G12", note: "até o 12º: Libertadores ou Sul-Americana", chance: "chance de vaga continental",
+           curve: "Chance de vaga continental", reach: "garante vaga continental" },
+    z4: { label: "Rebaixamento", short: "Z4", note: "terminar entre os 4 últimos", chance: "chance de rebaixamento",
+          curve: "Chance de escapar", reach: "escapa", bad: true },
+  };
+  // A server older than these fields sends no g12 and no focus: both come back from what it does send.
+  const raceChance = (e, key) => e[key] ?? (key === "g12" ? (e.positions || []).slice(0, 12).reduce((a, b) => a + b, 0) : 0);
+  const raceOf = (e) => e.focus || (e.z4 >= 0.05 ? "z4" : e.title >= 0.05 ? "title" : "g6");
+  const shift = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v) * 100, 1);
+
+  // The simulation feeds the Simulador tab and every team's Resumo: read once, dropped when the data changes.
+  let simLoading = null;
+  function loadSim() {
+    if (state.sim) return Promise.resolve(state.sim);
+    simLoading = simLoading || fetch("/api/simulacao").then(async (res) => {
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.erro || ("HTTP " + res.status));
+      state.sim = payload;
+      state.simError = null;
+      return payload;
+    }).finally(() => { simLoading = null; });
+    return simLoading;
+  }
+
+  function renderTeamSummary(host, t) {
+    if (!state.sim && !state.simError) {
+      host.appendChild(el("section", { class: "ooyl-card" }, el("div", { class: "empty", text: "Carregando a simulação do resto da temporada…" })));
+      loadSim().catch((err) => { state.simError = err.message; }).then(() => {
+        if (state.view === "time" && state.team === t && state.teamTab === "resumo") renderTeamTab();
+      });
+      return;
+    }
+    const id = t.team.id;
+    const row = state.index.table.find((r) => r.team.id === id) || null;
+    const entry = state.sim ? state.sim.table.find((e) => e.team.id === id) || null : null;
+    const left = state.sim ? allSimMatches().filter((m) => m.home.id === id || m.away.id === id) : [];
+    if (entry) {
+      summaryOdds(host, entry, row);
+      const stale = entry.next === undefined;  // a dashboard.py started before this tab
+      host.appendChild(el("div", { class: "team-pair" }, summaryNext(t, entry, stale), summaryPoints(entry, row, left, stale)));
+    } else {
+      host.appendChild(el("section", { class: "ooyl-card" }, el("div", { class: "empty", text: state.simError
+        ? "Sem a simulação do resto da temporada: " + state.simError : "O time não está na simulação do resto da temporada." })));
+    }
+    host.appendChild(summaryForm(id));
+    if (left.length) host.appendChild(summaryRunIn(id, entry, left));
+    summaryCampaign(host, id);
+  }
+
+  // The chances as tiles, the team's own race first and lit, then the points it ends on. A race the team
+  // never reached in any run ("–") is left out: on a phone each tile is half a row. The (i) on the lit
+  // tile opens, under the tiles, how the forecast is made.
+  function summaryOdds(host, e, row) {
+    const focus = raceOf(e);
+    const box = el("div", { class: "ooyl-tiles team-odds" });
+    const panel = forecastInfo(e, focus);
+    const info = el("button", { class: "info-dot", type: "button", title: "Como é feita a previsão",
+      "aria-label": "Como é feita a previsão", "aria-controls": panel.id, "aria-expanded": String(!panel.hidden),
+      onclick: () => showForecastInfo(info, panel, panel.hidden) }, "i");
+    panel.querySelector(".info-close").addEventListener("click", () => { showForecastInfo(info, panel, false); info.focus(); });
+    [focus, ...Object.keys(RACES).filter((k) => k !== focus && raceChance(e, k) > 0.00005)].forEach((key) => {
+      const race = RACES[key], node = tile(race.label, pctText(raceChance(e, key)), race.note);
+      if (key === focus) {
+        node.classList.add("is-focus", race.bad ? "is-bad" : "is-good");
+        node.querySelector(".ooyl-tile__label").append(info);
+      }
+      box.appendChild(node);
+    });
+    box.appendChild(tile("Pontos no fim", fmt(e.ptsProj, 0), `média das simulações; hoje são ${fmt(row ? row.pts : e.pts)}`));
+    host.append(box, panel);
+  }
+
+  function showForecastInfo(button, panel, open) {
+    state.oddsInfo = open;  // stays open when the page redraws (theme, another team)
+    panel.hidden = !open;
+    button.setAttribute("aria-expanded", String(open));
+    if (open) panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  // How the forecast is made, in a fan's words: the numbers are the model's (simulation.py) and the
+  // example is the team's own chance.
+  const HAPPENED = { title: "foi campeão", g6: "terminou entre os 6 primeiros", g12: "terminou entre os 12 primeiros", z4: "caiu" };
+  function forecastInfo(e, focus) {
+    const v = raceChance(e, focus), runs = state.sim && state.sim.runs ? state.sim.runs : 10000;
+    const share = v >= 0.01 ? `${fmt(v * 100, 0)} de cada 100` : `${fmt(v * 1000, 0)} de cada 1.000`;
+    const toSim = el("a", { href: "#/simulador", onclick: (ev) => { ev.preventDefault(); state.simMode = "prob"; go("#/simulador"); } },
+      "as chances de todos os times no Simulador");
+    return el("section", { class: "ooyl-card info-panel", id: "forecast-info", role: "region",
+                           "aria-label": "Como é feita a previsão", hidden: !state.oddsInfo },
+      el("header", { class: "info-panel__head" },
+        el("h2", { class: "ooyl-headline ooyl-headline--sm", text: "Como é feita a previsão" }),
+        el("button", { class: "ooyl-btn ooyl-btn--ghost ooyl-btn--sm info-close", type: "button" }, "Fechar")),
+      el("ol", { class: "info-steps" },
+        el("li", {}, el("b", { text: "A força de cada time. " }), "Cada time ganha uma força de ataque e uma de defesa, "
+          + "calculadas com os gols e o xG (gols esperados) de todos os jogos da temporada: o xG conta 75% e o placar, 25%. "
+          + "A conta desconta a força dos adversários que o time enfrentou, e os jogos recentes pesam mais: a cada 90 dias "
+          + "para trás, um jogo vale a metade."),
+        el("li", {}, el("b", { text: "A chance de cada placar. " }), "Com as forças dos dois times e a vantagem de jogar em "
+          + "casa, um modelo de Poisson (o de Dixon e Coles, que acerta a conta dos 0 a 0 e 1 a 1) dá a chance de cada placar "
+          + "em cada jogo que falta."),
+        el("li", {}, el("b", { text: `${fmt(runs)} campeonatos. ` }), `O computador sorteia o resto da temporada ${fmt(runs)} `
+          + "vezes, jogo a jogo, e monta a tabela final de cada sorteio com os critérios do campeonato: pontos, vitórias, saldo "
+          + "e gols marcados. Cada chance é a parte desses campeonatos em que o time terminou na faixa: "
+          + (v >= 0.0005 ? `${pctText(v)} de ${RACES[focus].chance} quer dizer que ele ${HAPPENED[focus]} em cerca de ${share}.`
+            : `na ${RACES[focus].chance}, em nenhum.`)),
+        el("li", {}, el("b", { text: "O próximo jogo e a conta. " }), "Saem dos mesmos sorteios: o próximo jogo separa os "
+          + "campeonatos em que o time venceu, empatou ou perdeu, e a conta junta os que terminaram com cada pontuação.")),
+      el("p", { class: "ooyl-sub" }, "O modelo só conhece gols e xG: não sabe de lesão, suspensão, troca de técnico nem do "
+        + "calendário de outras competições. É chance, não certeza, e a simulação é refeita a cada rodada. Veja ", toSim, "."));
+  }
+
+  // The next match and, for the team's race, the chance after a win, a draw and a loss there.
+  function summaryNext(t, e, stale) {
+    const nx = e.next, focus = raceOf(e), race = RACES[focus];
+    if (stale) return cardBox("Próximo jogo", "", el("div", { class: "empty",
+      text: "O servidor em execução é anterior a esta aba: reinicie o dashboard.py para ver o que está em jogo." }));
+    if (!nx) return cardBox("Próximo jogo", "O time não tem mais jogos no calendário.");
+    const m = { home: nx.home ? t.team : nx.opponent, away: nx.home ? nx.opponent : t.team, timestamp: nx.timestamp, status: nx.status };
+    const when = dated(m) ? longDay(m.timestamp) : "sem data definida";
+    const now = raceChance(e, focus);
+    const outcomes = [["win", "Vitória", "Vencendo"], ["draw", "Empate", "empatando"], ["loss", "Derrota", "perdendo"]]
+      .filter(([key]) => nx.given[key]);
+    const move = (v) => Math.abs(v - now) < 0.0005 ? ["fica em ", el("b", { text: pctText(v) })]
+      : [v < now ? "cai para " : "sobe para ", el("b", { text: pctText(v) })];
+    const lead = el("p", { class: "stakes-lead" }, `Hoje a ${race.chance} é de `, el("b", { text: pctText(now) }), ". ",
+      outcomes.map(([key, , word], i) => [i ? "; " : "", i ? word : word[0].toUpperCase() + word.slice(1), ", ", move(nx.given[key][focus])]), ".");
+    const table = el("table", {},
+      el("thead", {}, el("tr", {}, el("th", { class: "left", text: "Resultado" }),
+        el("th", { text: "Chance", title: "Chance de cada resultado, pelo modelo" }),
+        el("th", { text: race.short, title: `A ${race.chance} ao fim da temporada, nas simulações em que o jogo teve esse resultado` }),
+        el("th", { text: "Muda", title: "Diferença para a chance de hoje, em pontos percentuais" }))),
+      el("tbody", {}, outcomes.map(([key, label]) => {
+        const after = nx.given[key][focus], delta = after - now;
+        const better = Math.abs(delta) >= 0.0005 && (race.bad ? delta < 0 : delta > 0);
+        return el("tr", {},
+          el("td", { class: "left", text: label }),
+          el("td", { text: pctText(nx.odds[key]) }),
+          pctCell(after, race.bad ? "bad" : "good"),
+          el("td", { class: "shift" + (Math.abs(delta) < 0.0005 ? "" : better ? " is-better" : " is-worse"), text: shift(delta) }));
+      })));
+    return cardBox("Próximo jogo", `Rodada ${nx.round ?? "?"} · ${when} · ${nx.home ? "em casa" : "fora de casa"}.`,
+      nextGame(m), lead, el("div", { class: "scroll" }, table));
+  }
+
+  // The next match as a small scoreboard: each badge over its name (whole, even on a phone), the kickoff
+  // between them and how far off it is.
+  function nextGame(m) {
+    const side = (team) => el("span", { class: "next-game__side" }, crest(team, true), el("span", { text: team.name }));
+    const when = dated(m), now = Date.now() / 1000;
+    return el("div", { class: "next-game" }, side(m.home),
+      el("span", { class: "next-game__mid" },
+        el("span", { class: "next-game__time", text: when ? timeOf(m.timestamp) : "x" }),
+        el("span", { class: "next-game__day", text: !when ? (m.status === "canceled" ? "cancelado" : "adiado")
+          : m.timestamp <= now ? "aguardando coleta" : daysAway(m.timestamp) })),
+      side(m.away));
+  }
+
+  // Pool adjacent violators: the closest curve that never falls as the points grow, each total weighted by
+  // how often it was drawn. A total seen few times wobbles; the pooled curve reads the same as the sentence.
+  function monotone(rows) {
+    const blocks = [];
+    rows.forEach((r) => {
+      blocks.push({ v: r.v, w: r.runs, n: 1 });
+      while (blocks.length > 1 && blocks[blocks.length - 2].v > blocks[blocks.length - 1].v) {
+        const b = blocks.pop(), a = blocks.pop();
+        blocks.push({ v: (a.v * a.w + b.v * b.w) / (a.w + b.w), w: a.w + b.w, n: a.n + b.n });
+      }
+    });
+    const pooled = blocks.flatMap((b) => Array(b.n).fill(b.v));
+    return rows.map((r, i) => ({ ...r, v: pooled[i] }));
+  }
+
+  // How many points are enough: the chance of the team's race at each final total, and the total that
+  // gives it nine times in ten (rounded as shown, so the sentence and the lit bar agree).
+  function summaryPoints(e, row, left, stale) {
+    const focus = raceOf(e), race = RACES[focus];
+    if (stale || !e.points) return cardBox("A conta", "", el("div", { class: "empty",
+      text: "O servidor em execução é anterior a esta aba: reinicie o dashboard.py para ver a conta dos pontos." }));
+    const curve = monotone(e.points.map(([pts, runs, p]) => ({ pts, runs, v: race.bad ? 1 - p : p })));
+    if (!curve.length) return cardBox("A conta", "Sem pontuações finais suficientes nas simulações.");
+    const pts = row ? row.pts : e.pts, j = row ? row.j : e.j, games = left.length, most = pts + 3 * games;
+    const mark = curve.find((r) => Math.round(r.v * 100) >= 90) || null;
+    const lead = el("p", { class: "pts-lead" });
+    if (!mark) {
+      const best = curve[curve.length - 1];
+      lead.append("Nenhuma pontuação final chega a 90%: com ", el("b", { text: `${best.pts} pontos` }),
+        `, o time ${race.reach} em ${pct(best.v)} das simulações.`);
+    } else if (mark.pts <= pts) {
+      lead.append("Com ", el("b", { text: `${mark.pts} pontos` }), `, o time ${race.reach} em ${pct(mark.v)} das simulações, e ele já tem ${fmt(pts)}.`);
+    } else {
+      const need = mark.pts - pts;
+      lead.append("Com ", el("b", { text: `${mark.pts} pontos` }), `, o time ${race.reach} em ${pct(mark.v)} das simulações. `,
+        ...(need > 3 * games ? [`Faltam ${fmt(need)}, mais do que os ${fmt(3 * games)} que ainda estão em jogo.`]
+          : ["Faltam ", el("b", { text: `${fmt(need)} em ${counted(games, "jogo", "jogos")}` }),
+             `: ${pct(need / (3 * games))} de aproveitamento, contra ${pct(j ? pts / (3 * j) : 0)} até aqui.`]));
+    }
+    // The bars around the rise: from where the chance leaves 2% to where it passes 99%, at most 12 of them.
+    let from = curve.findIndex((r) => r.v >= 0.02), to = curve.findIndex((r) => r.v >= 0.99);
+    if (from < 0) from = 0;
+    if (to < 0) to = curve.length - 1;
+    const markAt = mark ? curve.indexOf(mark) : to;
+    while (to - from + 1 > 12) { if (markAt - from > to - markAt) from++; else to--; }
+    const bars = el("div", { class: "pts-curve", role: "img",
+      "aria-label": `${race.curve} por pontuação final: ` + curve.slice(from, to + 1).map((r) => `${r.pts} pontos, ${pct(r.v)}`).join("; ") },
+      curve.slice(from, to + 1).map((r) => el("div", { class: "pts-curve__col" + (r === mark ? " is-mark" : ""),
+        title: `${r.pts} pontos no fim: ${pctText(r.v)} (${fmt(r.runs)} simulações)` },
+        el("span", { class: "pts-curve__val", text: pct(r.v) }),
+        el("span", { class: "pts-curve__plot" }, el("i", { class: "pts-curve__bar", style: `height:${(100 * r.v).toFixed(1)}%` })),
+        el("span", { class: "pts-curve__pts", text: String(r.pts) }))));
+    return cardBox("A conta", `${race.curve} com cada pontuação final, nas simulações. Máximo possível: ${fmt(most)} pontos.`,
+      lead, bars, el("div", { class: "pts-curve__axis", text: "pontos no fim da temporada" }));
+  }
+
+  // The last five games, oldest first, each opening its match.
+  function summaryForm(id) {
+    const games = state.index.matches.filter((m) => m.home.id === id || m.away.id === id)
+      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)).slice(-5);
+    const tally = { V: 0, E: 0, D: 0 };
+    const strip = el("div", { class: "form-strip" }, games.map((m) => {
+      const home = m.home.id === id, gf = home ? m.gh : m.ga, ga = home ? m.ga : m.gh, opp = home ? m.away : m.home;
+      const res = gf > ga ? "V" : gf === ga ? "E" : "D";
+      tally[res]++;
+      return el("button", { class: "form-game is-" + { V: "win", E: "draw", D: "loss" }[res], onclick: () => go("#/partida/" + m.id),
+        title: `Rodada ${m.round ?? "?"}: ${m.home.name} ${m.gh}–${m.ga} ${m.away.name}` },
+        el("span", { class: "form-game__res", text: res }), crest(opp, true),
+        el("span", { class: "form-game__score", text: `${gf}–${ga}` }),
+        el("span", { class: "form-game__meta" }, el("span", { text: home ? "casa" : "fora" }), el("span", { text: dateOf(m.timestamp) })));
+    }));
+    const parts = [[tally.V, "vitória", "vitórias"], [tally.E, "empate", "empates"], [tally.D, "derrota", "derrotas"]]
+      .filter(([n]) => n).map(([n, one, many]) => counted(n, one, many));
+    const record = parts.length > 1 ? parts.slice(0, -1).join(", ") + " e " + parts[parts.length - 1] : parts.join("");
+    return cardBox("Últimos jogos", games.length
+      ? `Do mais antigo ao mais recente: ${record}, ${fmt(3 * tally.V + tally.E)} de ${fmt(3 * games.length)} pontos. `
+        + "O placar é o do time primeiro."
+      : "Nenhum jogo disputado ainda.", games.length ? strip : null);
+  }
+
+  // The games left, in calendar order, with the odds from the team's side: a head-to-head is a game
+  // against a team also in the race, between 5% and 99% of it.
+  function summaryRunIn(id, e, left) {
+    const focus = e ? raceOf(e) : null;
+    const byId = new Map(state.sim.table.map((x) => [x.team.id, x]));
+    const rival = (opp) => {
+      const o = byId.get(opp.id), v = o && focus ? raceChance(o, focus) : 0;
+      return v >= 0.05 && v <= 0.99;
+    };
+    let expected = 0;
+    const list = el("div", {}, left.map((m) => {
+      const home = m.home.id === id, opp = home ? m.away : m.home;
+      const win = home ? m.pHome : m.pAway, loss = home ? m.pAway : m.pHome;
+      expected += 3 * win + m.pDraw;
+      return el("div", { class: "runin-row" },
+        el("span", { class: "ooyl-match__when" }, dated(m) ? [el("small", { text: weekdayOf(m.timestamp) }), dateOf(m.timestamp)] : "–"),
+        el("span", { class: "runin-row__venue", text: home ? "casa" : "fora" }),
+        el("span", { class: "runin-row__opp" }, crest(opp),
+          el("button", { class: "runin-row__name", text: opp.name, title: "abrir o time", onclick: () => go("#/time/" + opp.id) }),
+          rival(opp) ? el("span", { class: "ooyl-tag", title: `o adversário também briga: ${RACES[focus].chance} de ${pctText(raceChance(byId.get(opp.id), focus))}` },
+            el("span", { class: "runin-row__wide", text: "confronto " }), "direto") : null),
+        resultBar(win, m.pDraw, loss));
+    }));
+    return cardBox("Reta final", `${counted(left.length, "jogo", "jogos")} a disputar, na ordem do calendário, com as chances do modelo `
+      + `de vitória, empate e derrota. Pontos esperados: ${fmt(expected, 1)} de ${fmt(3 * left.length)}.`
+      + (focus ? ` Confronto direto: o adversário também tem entre 5% e 99% de ${RACES[focus].chance}.` : ""), list);
+  }
+
+  // The chances of one team's game from its side: win, draw and loss, the likeliest in bold.
+  function resultBar(w, d, l) {
+    const v = [w, d, l], top = v.indexOf(Math.max(...v));
+    return el("span", { class: "ooyl-odds", title: `vitória ${pctText(w)} · empate ${pctText(d)} · derrota ${pctText(l)}` },
+      el("span", { class: "ooyl-odds__bar" }, el("i", { class: "w", style: `width:${100 * w}%` }),
+        el("i", { class: "d", style: `width:${100 * d}%` }), el("i", { class: "l", style: `width:${100 * l}%` })),
+      el("span", { class: "ooyl-odds__nums" }, v.map((n, i) => el("span", { class: i === top ? "is-fav" : null, text: pct(n) }))));
+  }
+
+  // The table after each round: every match of that round and of the ones before it, whenever it was
+  // played (a postponed game counts in its own round), ranked by the league's criteria.
+  function positionsByRound(id) {
+    const byRound = new Map(), rows = new Map(), out = [];
+    state.index.matches.forEach((m) => {
+      if (m.round == null) return;
+      if (!byRound.has(m.round)) byRound.set(m.round, []);
+      byRound.get(m.round).push(m);
+    });
+    const add = (team, gf, ga) => {
+      if (!rows.has(team.id)) rows.set(team.id, { team, pts: 0, v: 0, gp: 0, gc: 0 });
+      const r = rows.get(team.id);
+      r.gp += gf; r.gc += ga;
+      if (gf > ga) { r.pts += 3; r.v += 1; } else if (gf === ga) r.pts += 1;
+    };
+    [...byRound.keys()].sort((a, b) => a - b).forEach((rnd) => {
+      byRound.get(rnd).forEach((m) => { add(m.home, m.gh, m.ga); add(m.away, m.ga, m.gh); });
+      if (!rows.has(id)) return;
+      const ranked = [...rows.values()].sort((a, b) => b.pts - a.pts || b.v - a.v || (b.gp - b.gc) - (a.gp - a.gc)
+        || b.gp - a.gp || (a.team.name || "").localeCompare(b.team.name || ""));
+      out.push({ x: rnd, pos: ranked.findIndex((r) => r.team.id === id) + 1, pts: rows.get(id).pts });
+    });
+    return out;
+  }
+
+  function summaryCampaign(host, id) {
+    const chart = el("div"), table = el("table");
+    const pts = positionsByRound(id);
+    host.appendChild(cardBox("Campanha", "Posição ao fim de cada rodada, sobre as faixas da tabela: Libertadores, Sul-Americana e "
+      + "rebaixamento. Um jogo adiado conta na rodada dele.", chart,
+      el("details", {}, el("summary", { text: "Ver dados em tabela" }), el("div", { class: "scroll" }, table))));
+    positionChart(chart, pts, state.index.table.length);
+    table.appendChild(el("thead", {}, el("tr", {}, ["Rodada", "Posição", "Pontos"].map((h, i) => el("th", { class: i ? "" : "left", text: h })))));
+    table.appendChild(el("tbody", {}, pts.slice().reverse().map((p) => el("tr", {},
+      el("td", { class: "left", text: String(p.x) }), el("td", { class: "strong", text: p.pos + "º" }), el("td", { text: fmt(p.pts) })))));
+  }
+
+  // Position round by round, 1st at the top, over the table's zones; the last round highlighted and
+  // labelled, a crosshair with the tooltip. Drawn at the card's width and redrawn like lineChart.
+  const ZONE_BANDS = [[1, 6, "lib"], [7, 12, "sul"], [17, 20, "reb"]];
+  function positionChart(host, pts, teams) {
+    clear(host);
+    charts.set(host, { width: host.clientWidth, draw: () => positionChart(host, pts, teams) });
+    if (!pts.length) { host.appendChild(el("div", { class: "empty", text: "Nenhuma rodada disputada." })); return; }
+    const W = Math.max(320, Math.round(host.clientWidth || 900)), H = 250;
+    const P = { t: 14, r: 48, b: 30, l: 44 };
+    const xs = pts.map((p) => p.x), xmin = Math.min(...xs), xmax = Math.max(...xs);
+    const px = (x) => P.l + (xmax === xmin ? 0.5 : (x - xmin) / (xmax - xmin)) * (W - P.l - P.r);
+    const step = (H - P.t - P.b) / Math.max(1, teams - 1);
+    const py = (pos) => P.t + (pos - 1) * step;
+    const svg = el("svg", { class: "ooyl-chart", viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img",
+                            "aria-label": "Posição na tabela rodada a rodada" });
+    ZONE_BANDS.filter(([from]) => from <= teams).forEach(([from, to, zone]) => svg.appendChild(el("rect", { class: "band " + zone,
+      x: P.l, width: W - P.l - P.r, y: py(from) - step / 2, height: (Math.min(to, teams) - from + 1) * step })));
+    [...new Set([1, 6, 12, 17, teams])].filter((pos) => pos <= teams).forEach((pos) => {
+      svg.appendChild(el("line", { class: "grid", x1: P.l, x2: W - P.r, y1: py(pos), y2: py(pos) }));
+      svg.appendChild(el("text", { class: "tick", x: P.l - 10, y: py(pos) + 4, "text-anchor": "end", text: pos + "º" }));
+    });
+    const every = Math.max(1, Math.ceil(pts.length / Math.max(2, Math.floor((W - P.l - P.r) / 30))));
+    const lastX = px(pts[pts.length - 1].x);
+    pts.forEach((p, i) => {
+      if (i !== pts.length - 1 && (i % every || lastX - px(p.x) < 22)) return;  // the last round always, never crowded
+      svg.appendChild(el("text", { class: "tick", x: px(p.x), y: H - 8, "text-anchor": "middle", text: String(p.x) }));
+    });
+    svg.appendChild(el("polyline", { class: "series", points: pts.map((p) => `${px(p.x)},${py(p.pos)}`).join(" ") }));
+    pts.forEach((p) => svg.appendChild(el("circle", { class: "point", cx: px(p.x), cy: py(p.pos), r: 3.5 })));
+    const last = pts[pts.length - 1];
+    svg.appendChild(el("circle", { class: "halo", cx: px(last.x), cy: py(last.pos), r: 11 }));
+    svg.appendChild(el("circle", { class: "hl", cx: px(last.x), cy: py(last.pos), r: 5 }));
+    svg.appendChild(el("text", { class: "hl-label", x: px(last.x) + 12, y: py(last.pos) + 4, text: last.pos + "º" }));
+    const hair = el("line", { class: "hair", y1: P.t, y2: H - P.b, opacity: 0 });
+    const dot = el("circle", { class: "hl", r: 5, opacity: 0 });
+    svg.appendChild(hair);
+    svg.appendChild(dot);
+    const hover = (ev) => {
+      const box = svg.getBoundingClientRect(), xv = (ev.clientX - box.left) * (W / box.width);
+      let best = 0, bd = Infinity;
+      pts.forEach((p, i) => { const d = Math.abs(px(p.x) - xv); if (d < bd) { bd = d; best = i; } });
+      const p = pts[best];
+      hair.setAttribute("x1", px(p.x)); hair.setAttribute("x2", px(p.x)); hair.setAttribute("opacity", 1);
+      dot.setAttribute("cx", px(p.x)); dot.setAttribute("cy", py(p.pos)); dot.setAttribute("opacity", 1);
+      showTip(ev.clientX, ev.clientY, [el("div", { class: "l", text: "Rodada " + p.x }),
+        tipLine("posição", p.pos + "º", "var(--data-dot)"), el("div", { class: "l", text: counted(p.pts, "ponto", "pontos") })]);
+    };
+    svg.addEventListener("pointermove", hover);
+    svg.addEventListener("pointerdown", hover);  // a tap on a phone, where there is no hover
+    svg.addEventListener("pointerleave", () => { hair.setAttribute("opacity", 0); dot.setAttribute("opacity", 0); hideTip(); });
+    host.appendChild(svg);
+    charts.get(host).width = host.clientWidth;
   }
 
   // ---- match list ----------------------------------------------------------
@@ -4841,6 +5330,9 @@
     state.refs = null;  // a new match changes every referee's numbers and the forecast: read them again
     state.refById = null;
     state.cards = null;
+    state.sim = null;  // and every chance of the simulation: the Simulador and the team pages read it again
+    state.simError = null;
+    if (state.view === "time" && state.team && state.teamTab === "resumo") renderTeam();
     if (state.view === "arbitragem" && state.rtab === "cartoes") openCards();
     else if (state.view === "arbitragem" || state.view === "arbitro") {
       loadReferees().then(() => {
@@ -4924,9 +5416,9 @@
       return;
     }
     if (parts[0] === "times") { setView("times"); renderTeams(); return; }
-    if (parts[0] === "time" && parts[1]) {  // #/time/{id}/shotmap and #/time/{id}/distancia open those tabs
+    if (parts[0] === "time" && parts[1]) {  // #/time/{id} opens Resumo; #/time/{id}/{aba} the other tabs
       const id = Number(parts[1]);
-      state.teamTab = TTABS.includes(parts[2]) ? parts[2] : "escalacoes";
+      state.teamTab = TTABS.includes(parts[2]) ? parts[2] : "resumo";
       if (state.team && state.team.team.id === id) { setView("time"); renderTeam(); } else openTeam(id);
       return;
     }
