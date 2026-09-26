@@ -1102,6 +1102,23 @@
   .xg-table tr.is-mine td.left { font-weight: 600; color: var(--ink-strong); }
   td small.venue { font: 400 11px/1 var(--font-mono); color: var(--ink-muted); }
   .numbers__code, .numbers__short { display: none; }
+  td.numbers__pts { color: var(--ink-muted); }
+  td.numbers__pts b { color: var(--ink-strong); font-weight: 700; }
+  /* O time na liga: the referee strips with group heads, and the place under the value, lit at either end. */
+  .team-strip .group-name { margin: var(--space-5) 0 var(--space-1); }
+  .team-strip .group-name:first-child { margin-top: var(--space-2); }
+  .team-strip__val { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+  .team-strip__val small { font: 600 11px/1 var(--font-mono); color: var(--ink-muted); }
+  .team-strip__val small.is-good { color: var(--good); }
+  .team-strip__val small.is-bad { color: var(--bad); }
+  /* De onde saem os gols: each count with its share, the set pieces summed over their indented parts. */
+  .origins td b { color: var(--ink-strong); font-weight: 700; }
+  .origins td small { margin-left: 6px; font: 400 11px/1 var(--font-mono); color: var(--ink-muted); }
+  .origins tr.is-sum td.left { font-weight: 600; color: var(--ink-strong); }
+  .origins tr.is-part td { padding-top: 5px; padding-bottom: 5px; }
+  .origins tr.is-part td.left { padding-left: var(--space-5); font-size: 13px; color: var(--ink-muted); }
+  .origins tr.is-total td { border-top: 1px solid var(--line-strong); }
+  .origins tr.is-total td.left { font-weight: 600; color: var(--ink-strong); }
   .moments { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-5) 0 var(--space-3); }
   .moments__col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .moments__plot {
@@ -1132,6 +1149,16 @@
     .numbers th { white-space: normal; }
     .numbers td.pos { width: 28px; }
     .numbers small.venue { display: block; margin-top: 3px; }
+    .origins td small { display: block; margin: 3px 0 0; }
+    .origins tr.is-part td.left { padding-left: var(--space-4); }
+    /* the short values of Casa × fora leave the middle to the names and notes */
+    .venues .ooyl-compare__row { grid-template-columns: 52px minmax(0, 1fr) 52px; column-gap: var(--space-2); }
+    /* each number on two lines, the name and value over a strip as wide as the card */
+    .team-strip .ref-strip__row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name val" "plot plot"; padding-top: 8px; }
+    .team-strip .ref-strip__name { grid-area: name; padding-left: var(--space-1); }
+    .team-strip .ref-strip__name b { white-space: nowrap; }
+    .team-strip .ref-strip__val { grid-area: val; flex-direction: row; align-items: baseline; gap: 8px; }
+    .team-strip .ref-strip__plot { grid-area: plot; min-height: 32px; }
   }
   .rooting td { vertical-align: middle; }
   .rooting__game { display: inline-flex; align-items: center; gap: 6px; font: 600 14px/1.3 var(--font-sans); color: var(--ink-strong); }
@@ -4207,10 +4234,10 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
   }
 
   // ---- time: números --------------------------------------------------------
-  // The team against the whole league, from /api/index: the xG table, the points each team's chances were
-  // worth (every shot a goal with the chance of its xG: dashboard.expected_points), the games furthest from
-  // it, and the game's moments (goals by 15 minutes, points dropped after leading and won after trailing:
-  // dashboard.count_moments).
+  // The team against the whole league, from /api/index: its place on each number of the season, the xG table
+  // (every shot a goal with the chance of its xG: dashboard.expected_points) and the games furthest from it,
+  // home against away, the game's moments (goals by 15 minutes, points dropped after leading and won after
+  // trailing: dashboard.count_moments) and where the goals come from (dashboard.count_origins, the scorers).
   const BANDS = [[1, 15], [16, 30], [31, 45], [46, 60], [61, 75], [76, 90]];
   const signed1 = (v) => (v >= 0.05 ? "+" : v <= -0.05 ? "−" : "") + fmt(Math.abs(v), 1);
   // A club in the tables, its code standing in for the name on phones; a head with its phone form (`short`)
@@ -4223,14 +4250,105 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       short ? [el("span", { class: "numbers__long", text: h }), el("span", { class: "numbers__short", "aria-hidden": "true", text: short })] : h);
   function renderTeamNumbers(host, t) {
     const rows = state.index.table, mine = rows.find((r) => r.team.id === t.team.id);
-    if (!mine || mine.xpts === undefined) {
+    if (!mine || mine.averages === undefined) {
       host.appendChild(el("section", { class: "ooyl-card" }, el("div", { class: "empty",
         text: "O servidor em execução é anterior a esta aba: reinicie o dashboard.py para ver os números." })));
       return;
     }
+    numbersLeague(host, rows, mine);
     numbersXgTable(host, rows, mine);
     numbersXgGames(host, t);
+    numbersVenues(host, rows, mine);
     numbersMoments(host, rows, mine);
+    numbersOrigins(host, rows, mine);
+  }
+
+  // A place said so that its direction cannot be misread: "o melhor", "o 3º melhor", "o 2º pior", "o pior".
+  function placeWords(place, of) {
+    if (place === 1) return "o melhor";
+    if (place === of) return "o pior";
+    return place <= of / 2 ? `o ${place}º melhor` : `o ${of - place + 1}º pior`;
+  }
+  const listWords = (items) => (items.length > 1 ? items.slice(0, -1).join(", ") + " e " + items[items.length - 1] : items[0] || "");
+
+  // Where the team stands among the 20 on each number of the season, as the referee strips: the other clubs as
+  // faint dots (a click opens their Números), the league's mean dashed and the team lit, with its value and
+  // place, 1º the best. The better end is always on the right, by Comparar's `better` (fewer goals, shots,
+  // fouls and cards count as better). The SofaScore statistics are each index row's per-game `averages`
+  // (teams.AVERAGED, the same as Comparar's), the distance the index's own.
+  const leagueAverage = (r, key, side = "for") => (r.averages && r.averages[key] ? r.averages[key][side] : null);
+  const perGameOf = (r, key) => (r.j ? r[key] / r.j : null);
+  const LEAGUE_NUMBERS = [
+    ["Ataque, por jogo", [
+      { name: "Gols", say: "gols marcados", value: (r) => perGameOf(r, "gp"), digits: 2 },
+      { name: "xG (gols esperados)", say: "xG a favor", value: (r) => perGameOf(r, "xg"), digits: 2 },
+      { name: "Finalizações", say: "finalizações", value: (r) => leagueAverage(r, "totalShotsOnGoal"), digits: 1 },
+      { name: "Finalizações no alvo", say: "finalizações no alvo", value: (r) => leagueAverage(r, "shotsOnGoal"), digits: 1 },
+      { name: "Grandes chances", say: "grandes chances criadas", value: (r) => leagueAverage(r, "bigChanceCreated"), digits: 1 },
+      { name: "Toques na área adversária", say: "toques na área adversária", value: (r) => leagueAverage(r, "touchesInOppBox"), digits: 1 },
+    ]],
+    ["Defesa, por jogo", [
+      { name: "Gols sofridos", say: "gols sofridos", value: (r) => perGameOf(r, "gc"), digits: 2, low: true },
+      { name: "xG sofrido", say: "xG sofrido", value: (r) => perGameOf(r, "xga"), digits: 2, low: true },
+      { name: "Finalizações sofridas", say: "finalizações sofridas", value: (r) => leagueAverage(r, "totalShotsOnGoal", "against"), digits: 1, low: true },
+      { name: "Grandes chances cedidas", say: "grandes chances cedidas", value: (r) => leagueAverage(r, "bigChanceCreated", "against"), digits: 1, low: true },
+      { name: "Jogos sem sofrer gol", say: "jogos sem sofrer gol", value: (r) => r.cs, digits: 0 },
+      { name: "Desarmes", say: "desarmes", value: (r) => leagueAverage(r, "totalTackle"), digits: 1 },
+    ]],
+    ["Estilo e intensidade, por jogo", [
+      { name: "Posse de bola", say: "posse de bola", value: (r) => leagueAverage(r, "ballPossession"), text: (v) => fmt(v, 1) + "%" },
+      { name: "Passes certos", say: "acerto de passes", text: (v) => fmt(100 * v, 0) + "%",
+        value: (r) => { const all = leagueAverage(r, "passes"); return all ? leagueAverage(r, "accuratePasses") / all : null; } },
+      { name: "Duelos ganhos", say: "duelos ganhos", value: (r) => leagueAverage(r, "duelWonPercent"), text: (v) => fmt(v, 1) + "%" },
+      { name: "Distância percorrida", say: "distância percorrida", text: (v) => fmt(v, 1) + " km",
+        value: (r) => { const d = state.index.distance && state.index.distance.teams.find((x) => x.team.id === r.team.id); return d ? d.perGame : null; } },
+      { name: "Faltas", say: "faltas cometidas", value: (r) => leagueAverage(r, "fouls"), digits: 1, low: true },
+      { name: "Cartões", say: "cartões", value: (r) => (r.j ? teamCards(r) / r.j : null), digits: 2, low: true },
+    ]],
+  ];
+  const EDGE = 4;  // the first and last four places are lit, as the table's G4 and Z4
+  function numbersLeague(host, rows, mine) {
+    const strip = el("div", { class: "ref-strip team-strip" }), placed = [];
+    LEAGUE_NUMBERS.forEach(([group, specs]) => {
+      strip.appendChild(el("h3", { class: "group-name", text: group }));
+      specs.forEach((spec) => {
+        const values = rows.map((r) => ({ r, v: spec.value(r) })).filter((x) => x.v != null && Number.isFinite(x.v));
+        const me = values.find((x) => x.r === mine);
+        if (!me) return;
+        const place = 1 + values.filter((x) => (spec.low ? x.v < me.v : x.v > me.v)).length, of = values.length;
+        const mean = values.reduce((sum, x) => sum + x.v, 0) / of;
+        const lo = Math.min(...values.map((x) => x.v)), hi = Math.max(...values.map((x) => x.v)), pad = (hi - lo) * 0.06 || 1;
+        const x = (v) => { const at = (100 * (v - lo + pad)) / (hi - lo + 2 * pad); return spec.low ? 100 - at : at; };
+        const text = spec.text || ((v) => fmt(v, spec.digits));
+        const plot = el("span", { class: "ref-strip__plot" }, el("span", { class: "ooyl-dotplot__ref", style: `left:${x(mean)}%` }));
+        values.filter((o) => o !== me).forEach((o) => {
+          const dot = el("i", { class: "ref-strip__peer", style: `left:${x(o.v)}%` });
+          dot.addEventListener("pointermove", (ev) => showTip(ev.clientX, ev.clientY, [el("div", { class: "l", text: o.r.team.name }),
+            tipLine(spec.name.toLowerCase(), text(o.v), "var(--data-context)"), el("div", { class: "l", text: "clique para abrir os números" })]));
+          dot.addEventListener("pointerleave", hideTip);
+          dot.addEventListener("click", () => { hideTip(); go(teamHref(o.r.team.id, "numeros")); });
+          plot.appendChild(dot);
+        });
+        plot.appendChild(el("i", { class: "ref-strip__me", style: `left:${x(me.v)}%` }));
+        placed.push({ spec, place, of });
+        strip.appendChild(el("div", { class: "ref-strip__row", title: `${placeWords(place, of)} da liga` },
+          el("span", { class: "ref-strip__name" }, el("b", { text: spec.name, title: spec.name }), el("small", { text: "liga " + text(mean) })),
+          plot,
+          el("span", { class: "ref-strip__val team-strip__val" }, text(me.v),
+            el("small", { class: place <= EDGE ? "is-good" : place > of - EDGE ? "is-bad" : null, text: place + "º" }))));
+      });
+    });
+    // its three best places in the top half and its three worst in the bottom half, the most extreme first
+    const said = (x) => `${x.spec.say} (${placeWords(x.place, x.of)}${x.place === 1 || x.place === x.of ? " da liga" : ""})`;
+    const best = placed.filter((x) => x.place <= x.of / 2).sort((a, b) => a.place - b.place).slice(0, 3);
+    const worst = placed.filter((x) => x.place > x.of / 2).sort((a, b) => (b.place - b.of) - (a.place - a.of)).slice(0, 3);
+    const lead = el("p", { class: "stakes-lead" },
+      best.length ? `Onde o time vai melhor: ${listWords(best.map(said))}. ` : "O time não está na metade de cima da liga em nenhum destes números. ",
+      worst.length ? `Onde vai pior: ${listWords(worst.map(said))}.` : "E não está na metade de baixo em nenhum.");
+    host.appendChild(cardBox("O time na liga", "Onde o time fica entre os 20 em cada número da temporada: cada ponto é um time "
+      + "(clique para abrir), a linha tracejada é a média da liga e o time da página vem aceso, com a posição, do 1º, o melhor, "
+      + "ao 20º. Em todas as linhas, quanto mais à direita, melhor: menos gols e chances sofridos, menos faltas e menos cartões "
+      + "contam como melhor, como no Comparar.", lead, strip));
   }
 
   function numbersXgTable(host, rows, mine) {
@@ -4243,7 +4361,8 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       el("b", { text: fmt(mine.xpts, 1) + " pontos" }), ", e não ", el("b", { text: fmt(mine.xptsReal) }),
       Math.abs(d) < 0.05 ? ": exatamente o que as chances davam." : `: ${fmt(Math.abs(d), 1)} ${d > 0 ? "acima" : "abaixo"} do que `
         + `elas davam, o ${rank}º ${d > 0 ? "mais favorecido" : "mais prejudicado"} da liga.`,
-      ` Na tabela do xG ficaria em `, el("b", { text: at + "º" }), `, e não em ${mine.pos}º.`,
+      ...(at === mine.pos ? [" Na tabela do xG ficaria na mesma posição, em ", el("b", { text: at + "º" }), "."]
+        : [" Na tabela do xG ficaria em ", el("b", { text: at + "º" }), `, e não em ${mine.pos}º.`]),
       mine.xptsGames < mine.j ? ` (Em ${mine.xptsGames} dos ${mine.j} jogos: os outros não têm shotmap.)` : "");
     const table = el("table", { class: "xg-table numbers" },
       el("thead", {}, el("tr", {}, [{ h: "#", title: "Posição pela tabela do xG", left: true }, { h: "Time", left: true },
@@ -4264,7 +4383,10 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       lead, el("div", { class: "scroll" }, table)));
   }
 
-  // The team's games furthest from their xG, both ways: points it took that its chances did not give, and the reverse.
+  // The team's games furthest from their xG, both ways: points it took that its chances did not give, and the
+  // reverse (the xG table's difference comes from them). Points, not goals: a 4-0 on an xG of 2-0 was still a
+  // win. The widest one is told in words on top, with its goals and xG.
+  const pointWord = (v) => (Math.abs(v) < 2 ? "ponto" : "pontos");
   function numbersXgGames(host, t) {
     const id = t.team.id;
     const games = state.index.matches.filter((m) => (m.home.id === id || m.away.id === id) && m.xph != null).map((m) => {
@@ -4276,22 +4398,31 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     const table = (list) => el("table", { class: "numbers" },
       el("thead", {}, el("tr", {}, [{ h: "Rod.", title: "Rodada", left: true, wide: true }, { h: "Adversário", short: "Adv.", left: true },
         { h: "Placar", left: true }, { h: "xG", title: "Gols esperados do time e do adversário" },
-        { h: "Pelo xG", title: "Pontos que as chances do jogo valiam" }, { h: "Pontos", short: "Pts" }].map(numbersHead))),
+        { h: "Pontos", title: "Os pontos que as chances do jogo davam → os que o time ganhou" }].map(numbersHead))),
       el("tbody", {}, list.map((g) => el("tr", { class: "row-link", title: "abrir a partida", onclick: () => go("#/partida/" + g.m.id) },
         el("td", { class: "left numbers__wide", text: String(g.m.round ?? "-") }),
         el("td", { class: "left" }, numbersClub(g.opp, g.opp.short || g.opp.name), el("small", { class: "venue", text: g.home ? " casa" : " fora" })),
         el("td", { class: "left " + (g.real === 3 ? "win" : g.real === 0 ? "lose" : ""), text: `${g.gf}–${g.ga}` }),
         el("td", { class: "muted", text: `${fmt(g.xgf, 1)}–${fmt(g.xgc, 1)}` }),
-        el("td", { text: fmt(g.xp, 1) }),
-        el("td", { class: "strong", text: String(g.real) })))));
+        el("td", { class: "numbers__pts" }, `${fmt(g.xp, 1)} → `, el("b", { text: String(g.real) }))))));
     const above = games.filter((g) => g.real - g.xp >= 0.5).sort((a, b) => (b.real - b.xp) - (a.real - a.xp)).slice(0, 4);
     const below = games.filter((g) => g.real - g.xp <= -0.5).sort((a, b) => (a.real - a.xp) - (b.real - b.xp)).slice(0, 4);
     const half = (title, list, none) => el("div", {}, el("h3", { class: "group-name", text: title }),
       list.length ? el("div", { class: "scroll" }, table(list)) : el("div", { class: "empty", text: none }));
-    host.appendChild(cardBox("Os jogos que mais fugiram do xG", "Pelo xG são os pontos que as chances daquele jogo valiam. "
-      + "Clique para abrir a partida.", el("div", { class: "team-pair" },
-        half("Mais pontos que as chances", above, "Nenhum jogo com meio ponto ou mais acima do xG."),
-        half("Menos pontos que as chances", below, "Nenhum jogo com meio ponto ou mais abaixo do xG."))));
+    const widest = [...above, ...below].sort((a, b) => Math.abs(b.real - b.xp) - Math.abs(a.real - a.xp))[0];
+    const lead = widest ? el("p", { class: "stakes-lead" }, "Por exemplo, em ",
+      el("b", { text: `${widest.m.home.short || widest.m.home.name} ${widest.m.gh}–${widest.m.ga} ${widest.m.away.short || widest.m.away.name}` }),
+      (widest.m.round ? `, pela ${widest.m.round}ª rodada,` : ",") + ` o time criou ${fmt(widest.xgf, 1)} de xG e `
+      + (widest.gf ? `fez ${counted(widest.gf, "gol", "gols")}` : "não fez gol") + `; cedeu ${fmt(widest.xgc, 1)} e `
+      + (widest.ga ? `sofreu ${widest.ga}` : "não sofreu gol") + ". Com essas chances, ganharia em média ",
+      el("b", { text: `${fmt(widest.xp, 1)} ${pointWord(widest.xp)}` }), "; ",
+      widest.real === 3 ? "venceu e levou 3." : widest.real === 1 ? "empatou e levou 1." : "perdeu e não levou nenhum.") : null;
+    host.appendChild(cardBox("Os jogos que mais fugiram do xG", "Com o xG das finalizações de cada lado dá para calcular quantos "
+      + "pontos um jogo valia em média, como na tabela do xG. Estes são os jogos em que o time ganhou muito mais ou muito menos "
+      + "do que isso: na coluna Pontos, o que as chances davam → o que ele ganhou. Clique para abrir a partida.",
+      lead, el("div", { class: "team-pair" },
+        half("Ganhou mais do que as chances davam", above, "Nenhum jogo com meio ponto ou mais acima do que as chances davam."),
+        half("Ganhou menos do que as chances davam", below, "Nenhum jogo com meio ponto ou mais abaixo do que as chances davam."))));
   }
 
   // Goals by 15 minutes, scored and conceded, over the league's mean per team; and what the team did with a lead.
@@ -4300,7 +4431,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     if (!m || !m.games) return;
     const sum = (list) => list.reduce((a, b) => a + b, 0);
     const peak = (list) => list.indexOf(Math.max(...list));
-    const band = (i) => `dos ${BANDS[i][0]} aos ${BANDS[i][1]} minutos`;
+    const band = (i) => (i ? `dos ${BANDS[i][0]} aos ${BANDS[i][1]} minutos` : `nos primeiros ${BANDS[0][1]} minutos`);
     const measured = rows.filter((r) => r.moments && r.moments.games);
     const leagueMean = BANDS.map((_, i) => measured.reduce((s, r) => s + r.moments.for[i], 0) / Math.max(1, measured.length));
     const top = Math.max(1, ...m.for, ...m.against, ...leagueMean);
@@ -4337,6 +4468,134 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       lead, chart, legend, tiles));
   }
   const signedInt = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v));
+
+  // Home and away apart, from the index's matches: points, wins, goals, xG and the points the chances were
+  // worth, in Comparar's rows with the better side lit (per game: the two can differ by a game); the lead
+  // places each side among the league's home and away records, by points per game.
+  function venueSplit(id) {
+    const sides = [0, 1].map(() => ({ j: 0, pts: 0, v: 0, e: 0, d: 0, gf: 0, ga: 0, xgf: 0, xga: 0, xp: 0 }));
+    state.index.matches.forEach((m) => {
+      const home = m.home.id === id;
+      if (!home && m.away.id !== id) return;
+      const s = sides[home ? 0 : 1], gf = home ? m.gh : m.ga, ga = home ? m.ga : m.gh;
+      s.j++; s.gf += gf; s.ga += ga; s.xgf += home ? m.xgh : m.xga; s.xga += home ? m.xga : m.xgh;
+      s.xp += (home ? m.xph : m.xpa) || 0;
+      if (gf > ga) { s.v++; s.pts += 3; } else if (gf === ga) { s.e++; s.pts++; } else s.d++;
+    });
+    return sides;
+  }
+  function numbersVenues(host, rows, mine) {
+    const all = rows.map((r) => ({ r, sides: venueSplit(r.team.id) })), [home, away] = all.find((x) => x.r === mine).sides;
+    if (!home.j || !away.j) return;
+    const ppg = (s) => s.pts / s.j;
+    const place = (i) => { const others = all.filter((x) => x.sides[i].j);
+      return [1 + others.filter((x) => ppg(x.sides[i]) > ppg([home, away][i])).length, others.length]; };
+    const [homeAt, homeOf] = place(0), [awayAt, awayOf] = place(1);
+    const lead = el("p", { class: "stakes-lead" }, `${home.pts} dos ${home.pts + away.pts} pontos vieram em casa: `,
+      el("b", { text: `${placeWords(homeAt, homeOf)} mandante` }), " da liga. Fora, foram ", `${counted(away.pts, "ponto", "pontos")} em ${away.j} jogos: `,
+      el("b", { text: `${placeWords(awayAt, awayOf)} visitante` }), ".");
+    const each = (h, a, digits) => `por jogo ${fmt(h / home.j, digits)} · ${fmt(a / away.j, digits)}`;
+    const lines = [
+      { name: "Pontos", h: home.pts, a: away.pts, note: `aproveitamento ${fmt((100 * home.pts) / (3 * home.j), 0)}% · ${fmt((100 * away.pts) / (3 * away.j), 0)}%` },
+      { name: "Vitórias", h: home.v, a: away.v },
+      { name: "Derrotas", h: home.d, a: away.d, low: true },
+      { name: "Gols marcados", h: home.gf, a: away.gf, note: each(home.gf, away.gf, 2) },
+      { name: "Gols sofridos", h: home.ga, a: away.ga, low: true, note: each(home.ga, away.ga, 2) },
+      { name: "xG (gols esperados)", h: home.xgf, a: away.xgf, digits: 1, note: each(home.xgf, away.xgf, 2) },
+      { name: "xG sofrido", h: home.xga, a: away.xga, low: true, digits: 1, note: each(home.xga, away.xga, 2) },
+      { name: "Pontos pelo xG", h: home.xp, a: away.xp, digits: 1, note: "o que as chances valiam, como na tabela do xG" },
+    ];
+    const box = el("div", { class: "ooyl-compare venues" },
+      el("div", { class: "ooyl-compare__legend" },
+        el("span", { class: "tname" }, el("i", { class: "swatch", style: "background:var(--home)" }), el("span", { text: `Em casa · ${counted(home.j, "jogo", "jogos")}` })),
+        el("span", { class: "tname" }, el("span", { text: `Fora · ${counted(away.j, "jogo", "jogos")}` }), el("i", { class: "swatch", style: "background:var(--away)" }))),
+      lines.map((l) => {
+        const hp = l.h / home.j, ap = l.a / away.j;
+        const side = hp === ap ? "" : (l.low ? hp < ap : hp > ap) ? "home" : "away", total = l.h + l.a;
+        return el("div", { class: "ooyl-compare__row" },
+          el("span", { class: "ooyl-compare__v is-home" + (side === "home" ? " is-lead" : ""), text: fmt(l.h, l.digits || 0) }),
+          el("span", { class: "ooyl-compare__name" }, l.name, l.note ? el("small", { text: l.note }) : null),
+          el("span", { class: "ooyl-compare__v is-away" + (side === "away" ? " is-lead" : ""), text: fmt(l.a, l.digits || 0) }),
+          el("div", { class: "ooyl-compare__bars", "aria-hidden": "true" },
+            el("span", { class: "ooyl-compare__half is-home" }, el("i", { class: side !== "away" ? "is-lead" : null, style: `width:${total ? (100 * l.h) / total : 0}%` })),
+            el("span", { class: "ooyl-compare__half is-away" }, el("i", { class: side !== "home" ? "is-lead" : null, style: `width:${total ? (100 * l.a) / total : 0}%` }))));
+      }));
+    host.appendChild(cardBox("Casa × fora", "Os jogos em casa e fora, lado a lado; em cada linha, aceso o lado melhor por jogo. "
+      + "Embaixo de cada número, a média por jogo de cada lado.", lead, box));
+  }
+
+  // The team's goals, scored and conceded, by how each came about (the shotmap's situation of the goal:
+  // dashboard.count_origins) next to the whole league's share, the set pieces summed; and how much of the
+  // scoring rests on the top scorer, against the other clubs (the index row's own `scorers`).
+  const ORIGINS = [  // label, the shotmap's situations, a set piece
+    ["Bola rolando", ["assisted", "regular"]],
+    ["Contra-ataque", ["fast-break"]],
+    ["Escanteio", ["corner"], true],
+    ["Falta", ["free-kick", "set-piece"], true],
+    ["Lateral", ["throw-in-set-piece"], true],
+    ["Pênalti", ["penalty"], true],
+    ["Gol contra", ["own"]],
+  ];
+  function numbersOrigins(host, rows, mine) {
+    const o = mine.origins;
+    if (!o || !o.games) return;
+    const league = {};  // every goal of the league once, on the side that scored it
+    rows.forEach((r) => Object.entries((r.origins || {}).for || {}).forEach(([k, n]) => { league[k] = (league[k] || 0) + n; }));
+    const known = new Set(ORIGINS.flatMap(([, keys]) => keys));
+    const others = [...new Set([o.for, o.against, league].flatMap((side) => Object.keys(side)))].filter((k) => !known.has(k));
+    const count = (side, keys) => keys.reduce((sum, k) => sum + (side[k] || 0), 0);
+    const total = (side) => Object.values(side).reduce((sum, n) => sum + n, 0);
+    const T = { for: total(o.for), against: total(o.against), league: total(league) };
+    const pct = (n, of) => (of ? fmt((100 * n) / of, 0) + "%" : "–");
+    const cell = (n, of) => el("td", {}, el("b", { text: fmt(n) }), n ? el("small", { text: pct(n, of) }) : null);
+    const line = (label, keys, cls) => el("tr", { class: cls || null }, el("td", { class: "left", text: label }),
+      cell(count(o.for, keys), T.for), cell(count(o.against, keys), T.against),
+      el("td", { class: "muted", text: pct(count(league, keys), T.league) }));
+    const setKeys = ORIGINS.filter((x) => x[2]).flatMap(([, keys]) => keys);
+    const body = [];
+    ORIGINS.forEach(([label, keys, set], i) => {
+      if (set && !ORIGINS[i - 1][2]) body.push(line("Bola parada", setKeys, "is-sum"));
+      body.push(line(label, keys, set ? "is-part" : null));
+    });
+    if (others.length) body.push(line("Outras", others));
+    body.push(el("tr", { class: "is-total" }, el("td", { class: "left", text: "Total" }),
+      el("td", {}, el("b", { text: fmt(T.for) })), el("td", {}, el("b", { text: fmt(T.against) })), el("td", {})));
+    const table = el("table", { class: "numbers origins" },
+      el("thead", {}, el("tr", {}, [{ h: "Origem", left: true }, { h: "Gols pró", short: "Pró" }, { h: "Gols contra", short: "Contra" },
+        { h: "Na liga", short: "Liga", title: "A parte dos gols de todo o campeonato que saiu assim" }].map(numbersHead))),
+      el("tbody", {}, body));
+    const setFor = count(o.for, setKeys), setAgainst = count(o.against, setKeys);
+    const topSet = ORIGINS.filter((x) => x[2]).map(([label, keys]) => ({ label, n: count(o.for, keys) })).sort((a, b) => b.n - a.n)[0];
+    const lead = el("p", { class: "stakes-lead" }, "De bola parada saíram ", el("b", { text: `${setFor} dos ${T.for} gols` }),
+      ` do time (${pct(setFor, T.for)})` + (topSet.n > setFor / 2 ? `, ${topSet.n} deles de ${topSet.label.toLowerCase()}` : "")
+      + `; no campeonato, ${pct(count(league, setKeys), T.league)} dos gols saem assim. Na defesa, ${setAgainst} dos ${T.against} `
+      + `gols sofridos (${pct(setAgainst, T.against)}).` + (o.games < mine.j ? ` (Em ${o.games} dos ${mine.j} jogos: os outros não têm shotmap.)` : ""));
+
+    const scorers = el("div", {});
+    const top = mine.scorers && mine.scorers.top[0];
+    if (top && mine.gp) {
+      const shares = rows.filter((r) => r.scorers && r.scorers.top.length && r.gp).map((r) => r.scorers.top[0].goals / r.gp);
+      const share = top.goals / mine.gp, at = 1 + shares.filter((s) => s > share).length;
+      const mean = shares.reduce((a, b) => a + b, 0) / shares.length;
+      scorers.append(el("p", { class: "stakes-lead" }, el("b", { text: top.name }),
+        ` fez ${top.goals} dos ${counted(mine.gp, "gol", "gols")} do time (${pct(top.goals, mine.gp)}): `
+        + (at === 1 ? "a maior dependência de um só jogador na liga" : `a ${at}ª maior dependência de um só jogador na liga`)
+        + `, onde o artilheiro de cada time faz em média ${fmt(100 * mean, 0)}% dos gols. `
+        + `Ao todo, ${counted(mine.scorers.count, "jogador marcou", "jogadores marcaram")}.`));
+      const list = el("div", {});
+      barList(list, mine.scorers.top, { label: "Artilheiros do time", value: (p) => p.goals, name: (p) => p.name,
+        text: (p) => `${fmt(p.goals)} · ${pct(p.goals, mine.gp)}`, face: (p) => p.face,
+        note: (p) => (p.penalties ? counted(p.penalties, "de pênalti", "de pênalti") : ""),
+        open: (p) => (playerById(p.id) ? "#/jogador/" + p.id : null) });
+      scorers.append(list);
+    }
+    host.appendChild(cardBox("De onde saem os gols", "Cada gol pela jogada que o originou, pelo shotmap do SofaScore: bola "
+      + "rolando, contra-ataque ou bola parada (escanteio, falta, lateral e pênalti). Na liga é a parte dos gols de todo o "
+      + "campeonato que saiu de cada jeito. Ao lado, quem faz os gols do time.", lead,
+      el("div", { class: "team-pair" },
+        el("div", {}, el("h3", { class: "group-name", text: "Origem dos gols" }), el("div", { class: "scroll" }, table)),
+        el("div", {}, el("h3", { class: "group-name", text: "Quem faz os gols" }), scorers))));
+  }
 
   // ---- time: comparar -------------------------------------------------------
   // Two teams side by side, the page's team on the left in the home color: a scoreboard of how many rows each
