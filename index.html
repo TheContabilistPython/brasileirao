@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
+<script>window.OOYL_SHORT = "/";</script>
 <script>
 // Copia estatica (publicar.py): a API sao arquivos ao lado da pagina, e nao ha painel admin.
 (() => {
@@ -17,6 +18,18 @@
 <style>#sim-reload { display: none !important; } /* the simulation was drawn once, at publishing */</style>
 
 <meta charset="utf-8">
+<meta name="description" content="Brasileirão Série A em dados: tabela com xG, chances de título, Libertadores e rebaixamento na simulação do resto da temporada, partidas, escalações e estatísticas dos jogadores.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Out of Your League">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="https://www.outofyourleague.com.br/serie-a/">
+<meta property="og:title" content="Brasileirão Série A em dados · Out of Your League">
+<meta property="og:description" content="Tabela com xG, chances de título, Libertadores e rebaixamento, partidas, escalações e estatísticas dos jogadores, atualizados a cada rodada.">
+<meta property="og:image" content="https://www.outofyourleague.com.br/marca/compartilhamento.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@ooyl_br">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Out of Your League · Brasileirão Série A</title>
 <link rel="icon" href="marca/favicon.ico" sizes="32x32">
@@ -1079,6 +1092,21 @@
   .info-panel .ooyl-sub { max-width: 76ch; }
   .info-panel .ooyl-sub a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
   .info-panel .ooyl-sub a:hover { text-decoration-color: currentColor; }
+  /* Para quem torcer: one row per game of the round, the team's chance after each result, the best for it
+     tinted in `good`; on phones the clubs' three-letter codes and no "Torça" column (the tint says it). */
+  .rooting td { vertical-align: middle; }
+  .rooting__game { display: inline-flex; align-items: center; gap: 6px; font: 600 14px/1.3 var(--font-sans); color: var(--ink-strong); }
+  .rooting__game i { margin: 0 2px; font-style: normal; font-weight: 400; color: var(--ink-muted); }
+  .rooting td.left small { display: block; margin-top: 3px; font: 400 11px/1.2 var(--font-mono); color: var(--ink-muted); }
+  .rooting__code { display: none; }
+  .rooting td.rooting__cell.is-best { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--ink-strong); font-weight: 700; }
+  .rooting td.rooting__pick { font: 600 13px/1.3 var(--font-sans); color: var(--ink-strong); }
+  @media (max-width: 640px) {
+    .rooting__name, .rooting__game .crest { display: none; }
+    .rooting__code { display: inline; }
+    .rooting .rooting__pick { display: none; }
+    .rooting td, .rooting th { padding-left: 6px; padding-right: 6px; }
+  }
   .team-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); align-items: start; }
   @media (max-width: 900px) { .team-pair { grid-template-columns: minmax(0, 1fr); } }
   .stakes-lead { margin: var(--space-4) 0 var(--space-3); max-width: 64ch; font-size: 14.5px; line-height: 21px; color: var(--ink); }
@@ -1159,18 +1187,6 @@
     .ref-minutes__bar, .ref-strip__me { forced-color-adjust: none; border: 1px solid ButtonText; }
   }
 </style>
-<meta name="description" content="Brasileirão Série A em dados: tabela com xG, chances de título, Libertadores e rebaixamento na simulação do resto da temporada, partidas, escalações e estatísticas dos jogadores.">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Out of Your League">
-<meta property="og:locale" content="pt_BR">
-<meta property="og:url" content="https://www.outofyourleague.com.br/serie-a/">
-<meta property="og:title" content="Brasileirão Série A em dados · Out of Your League">
-<meta property="og:description" content="Tabela com xG, chances de título, Libertadores e rebaixamento, partidas, escalações e estatísticas dos jogadores, atualizados a cada rodada.">
-<meta property="og:image" content="https://www.outofyourleague.com.br/marca/compartilhamento.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@ooyl_br">
 <script>
 window.goatcounter = { path: () => location.pathname + location.hash };
 window.addEventListener("hashchange", () => window.goatcounter.count && window.goatcounter.count({ path: location.pathname + location.hash }));
@@ -1885,7 +1901,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     rows.forEach((r) => {
       // A row is the team: clicking anywhere on it opens the team's page in the Times tab.
       body.appendChild(el("tr", { class: "row-link", title: "abrir " + r.team.name + " na aba Times",
-                                  onclick: () => go("#/time/" + r.team.id) },
+                                  onclick: () => go(teamHref(r.team.id)) },
         el("td", { class: "left pos" }, el("i", { class: "zone " + zoneOf(r.pos) }), String(r.pos)),
         el("td", { class: "left" }, crest(r.team), el("span", { text: r.team.name })),
         el("td", { class: "strong", text: fmt(r.pts) }),
@@ -1989,7 +2005,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
 
   function teamStats() {
     const rows = state.index.table;
-    const open = { title: "abrir o time", href: (r) => "#/time/" + r.team.id };
+    const open = { title: "abrir o time", href: (r) => teamHref(r.team.id) };
     const byName = (a, b) => (a.team.name || "").localeCompare(b.team.name || "");
     const name = (r) => r.team.short || r.team.name || "";
     const per = (v, j) => fmt(j ? v / j : 0, 2);
@@ -2211,7 +2227,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       distStrip("Intensidade", DIST_BANDS, key, (k) => { state.distBand = k; renderLeaders(); })) : null;
     const cards = [];
 
-    const teamOpen = { title: "abrir a distância do time", href: (r) => `#/time/${r.team.id}/distancia` };
+    const teamOpen = { title: "abrir a distância do time", href: (r) => teamHref(r.team.id, "distancia") };
     const block = statsBlock("Times que mais correm", whole
       ? `Quilômetros por jogo, somando todos os jogadores do time, nos ${fmt(d.measured)} dos ${fmt(d.matches)} jogos em que `
         + "o SofaScore mediu a distância. A linha tracejada é a média da liga; clique num time para ver a distância dele jogo a jogo."
@@ -2596,7 +2612,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       el("th", { class: i === 0 ? "left" : "", text: h, title: REF_TITLES[h] || "" })))));
     teams.appendChild(el("tbody", {}, r.teams.map((t) => {
       const season = state.index && state.index.table.find((row) => row.team.id === t.team.id);
-      return el("tr", { class: "row-link", title: "abrir o time", onclick: () => go("#/time/" + t.team.id) },
+      return el("tr", { class: "row-link", title: "abrir o time", onclick: () => go(teamHref(t.team.id)) },
         el("td", { class: "left" }, crest(t.team), el("span", { text: t.team.name })),
         el("td", { text: fmt(t.j) }), el("td", { text: fmt(t.v) }), el("td", { text: fmt(t.e) }), el("td", { text: fmt(t.d) }),
         el("td", { class: "strong", text: fmt(t.cards) }), el("td", { text: fmt(t.cards / t.j, 1) }),
@@ -3383,7 +3399,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     table.appendChild(el("thead", {}, el("tr", {}, head.map((h, i) => el("th", { class: i <= 2 ? "left" : "", text: h })))));
     table.appendChild(el("tbody", {}, rows.map((r) => {
       const delta = r.was - r.pos;
-      return el("tr", { class: "row-link", title: "abrir o time", onclick: () => go("#/time/" + r.team.id) },
+      return el("tr", { class: "row-link", title: "abrir o time", onclick: () => go(teamHref(r.team.id)) },
         el("td", { class: "left pos" }, el("i", { class: "zone " + zoneOf(r.pos) }), String(r.pos)),
         el("td", { class: "left delta " + (delta > 0 ? "up" : delta < 0 ? "down" : ""),
                    text: delta > 0 ? "\u25b2" + delta : delta < 0 ? "\u25bc" + (-delta) : "" }),
@@ -3527,7 +3543,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     table.appendChild(el("thead", {}, el("tr", {}, head.map((h, i) =>
       el("th", { class: i <= 1 ? "left" : "", text: h, title: SIM_TITLES[h.normalize("NFD").replace(/[\u0300-\u036f]/g, "")] || "" })))));
     table.appendChild(el("tbody", {}, sim.table.map((r) => el("tr", {
-      class: "row-link", title: "abrir o time", onclick: () => go("#/time/" + r.team.id),
+      class: "row-link", title: "abrir o time", onclick: () => go(teamHref(r.team.id)),
     },
       el("td", { class: "left pos", text: String(r.pos) }),
       el("td", { class: "left" }, crest(r.team), el("span", { text: r.team.name })),
@@ -3586,7 +3602,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
   function renderTeams() {
     const host = clear($("teams-list"));
     state.index.table.forEach((r) => host.appendChild(el("button", {
-      class: "team-row", title: "abrir o time", onclick: () => go("#/time/" + r.team.id) },
+      class: "team-row", title: "abrir o time", onclick: () => go(teamHref(r.team.id)) },
       el("span", { class: "pos" }, el("i", { class: "zone " + zoneOf(r.pos) }), r.pos + "º"),
       el("span", { class: "name" }, crest(r.team, true), el("span", { text: r.team.name })),
       el("span", { class: "pts" }, fmt(r.pts), el("small", { text: "pts" })),
@@ -3635,7 +3651,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       el("span", { class: "ooyl-player__marks", text: p.avg != null ? starts : "sem nota · " + starts }));
   }
   // The team page: the hero, then four sections under line tabs, each with its own route
-  // #/time/{id}/{aba}; Resumo opens it. Filters inside a tab redraw only that tab.
+  // #/time/{slug}/{aba} (teamHref); Resumo opens it. Filters inside a tab redraw only that tab.
   const TTABS = ["resumo", "escalacoes", "shotmap", "distancia"];
   const TTAB_NAMES = { resumo: "Resumo", escalacoes: "Escalações", shotmap: "Shotmap", distancia: "Distância percorrida" };
   function renderTeam() {
@@ -3651,7 +3667,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
           : `${t.matches} jogos` }))));
     host.appendChild(el("div", { class: "ooyl-tabs ooyl-tabs--line", role: "tablist", "aria-label": "Seções do time" },
       TTABS.map((key) => el("button", { class: "ooyl-tab", role: "tab", "aria-selected": String(state.teamTab === key),
-        onclick: () => go(`#/time/${t.team.id}/${key}`) }, TTAB_NAMES[key]))));
+        onclick: () => go(teamHref(t.team.id, key)) }, TTAB_NAMES[key]))));
     host.appendChild(el("div", { class: "view", id: "team-tab" }));
     renderTeamTab();
   }
@@ -3748,6 +3764,8 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       summaryOdds(host, entry, row);
       const stale = entry.next === undefined;  // a dashboard.py started before this tab
       host.appendChild(el("div", { class: "team-pair" }, summaryNext(t, entry, stale), summaryPoints(entry, row, left, stale)));
+      const rooting = summaryRooting(t, entry);
+      if (rooting) host.appendChild(rooting);
     } else {
       host.appendChild(el("section", { class: "ooyl-card" }, el("div", { class: "empty", text: state.simError
         ? "Sem a simulação do resto da temporada: " + state.simError : "O time não está na simulação do resto da temporada." })));
@@ -3813,8 +3831,10 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
           + "e gols marcados. Cada chance é a parte desses campeonatos em que o time terminou na faixa: "
           + (v >= 0.0005 ? `${pctText(v)} de ${RACES[focus].chance} quer dizer que ele ${HAPPENED[focus]} em cerca de ${share}.`
             : `na ${RACES[focus].chance}, em nenhum.`)),
-        el("li", {}, el("b", { text: "O próximo jogo e a conta. " }), "Saem dos mesmos sorteios: o próximo jogo separa os "
-          + "campeonatos em que o time venceu, empatou ou perdeu, e a conta junta os que terminaram com cada pontuação.")),
+        el("li", {}, el("b", { text: "O próximo jogo, a conta e para quem torcer. " }), "Saem dos mesmos sorteios: o próximo "
+          + "jogo separa os campeonatos em que o time venceu, empatou ou perdeu; a conta junta os que terminaram com cada "
+          + "pontuação; e cada jogo da rodada é refeito com os três resultados possíveis, com todo o resto igual, para ver "
+          + "qual deles mais ajuda o time.")),
       el("p", { class: "ooyl-sub" }, "O modelo só conhece gols e xG: não sabe de lesão, suspensão, troca de técnico nem do "
         + "calendário de outras competições. É chance, não certeza, e a simulação é refeita a cada rodada. Veja ", toSim, "."));
   }
@@ -3863,6 +3883,61 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
         el("span", { class: "next-game__day", text: !when ? (m.status === "canceled" ? "cancelado" : "adiado")
           : m.timestamp <= now ? "aguardando coleta" : daysAway(m.timestamp) })),
       side(m.away));
+  }
+
+  // Who to root for: the next round's other games, with the team's chance if the home side wins, if it is a
+  // draw and if the away side wins (simulation.py rooting_view: every season replayed with that result, the
+  // rest as drawn), the most decisive first; on top, the round's best and worst case. A result within a tenth
+  // of the game's spread from the best counts as just as good: "Grêmio não vence" rather than a coin toss.
+  function summaryRooting(t, e) {
+    const plan = state.sim.rooting, mine = e.rooting;
+    if (!plan || !mine || !plan.games.length) return null;  // no round left, or a server older than this card
+    const focus = raceOf(e), race = RACES[focus], now = raceChance(e, focus);
+    const rows = plan.games.map((g, i) => ({ g, v: mine.given[i] })).filter((r) => r.v)
+      .map((r) => ({ ...r, swing: Math.max(...r.v) - Math.min(...r.v) })).sort((a, b) => b.swing - a.swing);
+    const shown = rows.filter((r) => r.swing >= 0.005), quiet = rows.length - shown.length;
+    const own = plan.games.some((g) => g.home.id === t.team.id || g.away.id === t.team.id);
+    const lead = el("p", { class: "stakes-lead" });
+    if (mine.best != null) {  // the round going all its way, then all against it
+      lead.append(`Rodada ${plan.round}: com ${own ? "vitória no próprio jogo" : ""}${own && shown.length ? " e " : ""}`
+        + (shown.length > 1 ? "os resultados abaixo a favor" : shown.length ? "o resultado abaixo a favor" : ""),
+        `, a ${race.chance} vai de ${pctText(now)} para `,
+        el("b", { text: pctText(mine.best) }));
+      if (mine.worst != null) lead.append("; com tudo contra, vai a ", el("b", { text: pctText(mine.worst) }));
+      lead.append(".");
+    }
+    const table = el("table", { class: "rooting" },
+      el("thead", {}, el("tr", {}, el("th", { class: "left", text: "Jogo" }),
+        el("th", { text: "Casa", title: `A ${race.chance} se o mandante vencer` }),
+        el("th", { text: "Empate", title: `A ${race.chance} se o jogo empatar` }),
+        el("th", { text: "Fora", title: `A ${race.chance} se o visitante vencer` }),
+        el("th", { class: "left rooting__pick", text: "Torça" }))),
+      el("tbody", {}, shown.map(({ g, v, swing }) => {
+        const top = race.bad ? Math.min(...v) : Math.max(...v);
+        const good = v.map((x) => Math.abs(x - top) <= swing / 10);  // just as good as the best
+        const sides = [g.home, null, g.away];
+        const pick = good.filter(Boolean).length === 1
+          ? (good[1] ? "empate" : (sides[good.indexOf(true)].short || sides[good.indexOf(true)].name))
+          : good[1] ? `${(good[0] ? g.away : g.home).short || (good[0] ? g.away : g.home).name} não vence` : "sem empate";
+        const name = (team) => [el("span", { class: "rooting__name", text: team.short || team.name }),
+                                el("span", { class: "rooting__code", text: team.code || team.short || team.name })];
+        return el("tr", {},
+          el("td", { class: "left" }, el("span", { class: "rooting__game" }, crest(g.home), name(g.home), el("i", { text: "x" }),
+            name(g.away), crest(g.away)),
+            el("small", { text: (dated(g) ? `${weekdayOf(g.timestamp)} ${dateOf(g.timestamp)}` : "sem data")
+              + (g.round !== plan.round ? ` · atrasado da rodada ${g.round}` : "") })),
+          v.map((x, i) => el("td", { class: "rooting__cell" + (good[i] ? " is-best" : ""),
+            title: `${["Se o mandante vencer", "Se empatar", "Se o visitante vencer"][i]}: ${race.chance} de ${pctText(x)}`,
+            text: pctText(x) })),
+          el("td", { class: "left rooting__pick", text: pick }));
+      })));
+    const sub = `A ${race.chance} ao fim da temporada se o mandante vencer, se empatar e se o visitante vencer cada `
+      + "jogo da rodada, com o melhor resultado para o time em destaque. Para cada jogo, as simulações são refeitas "
+      + "trocando só aquele resultado." + (quiet ? ` ${quiet === 1 ? "Outro jogo mexe" : `Os outros ${quiet} jogos mexem`} `
+      + "menos de 0,5 ponto percentual na chance." : "");
+    return cardBox("Para quem torcer", sub, mine.best != null ? lead : null,
+      shown.length ? el("div", { class: "scroll" }, table)
+        : el("div", { class: "empty", text: "Nenhum outro jogo da rodada mexe na chance do time." }));
   }
 
   // Pool adjacent violators: the closest curve that never falls as the points grow, each total weighted by
@@ -3963,7 +4038,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
         el("span", { class: "ooyl-match__when" }, dated(m) ? [el("small", { text: weekdayOf(m.timestamp) }), dateOf(m.timestamp)] : "–"),
         el("span", { class: "runin-row__venue", text: home ? "casa" : "fora" }),
         el("span", { class: "runin-row__opp" }, crest(opp),
-          el("button", { class: "runin-row__name", text: opp.name, title: "abrir o time", onclick: () => go("#/time/" + opp.id) }),
+          el("button", { class: "runin-row__name", text: opp.name, title: "abrir o time", onclick: () => go(teamHref(opp.id)) }),
           rival(opp) ? el("span", { class: "ooyl-tag", title: `o adversário também briga: ${RACES[focus].chance} de ${pctText(raceChance(byId.get(opp.id), focus))}` },
             el("span", { class: "runin-row__wide", text: "confronto " }), "direto") : null),
         resultBar(win, m.pDraw, loss));
@@ -5374,8 +5449,52 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
   const MTABS = ["resumo", "estatisticas", "escalacoes", "shotmap"];
   const go = (hash) => { if (location.hash === hash) applyHash(); else location.hash = hash; };
 
+  // A team page goes by the team's slug, the one of its short address (dashboard.build_index `slugs`):
+  // #/time/gremio, #/time/gremio/shotmap. An id still opens it (old links) and gives way to the slug.
+  const slugOf = (id) => (state.index && state.index.slugs && state.index.slugs[id]) || String(id);
+  const teamHref = (id, tab) => `#/time/${slugOf(id)}${tab && tab !== "resumo" ? "/" + tab : ""}`;
+  function teamOf(part) {
+    if (/^\d+$/.test(part)) return Number(part);
+    const slugs = (state.index && state.index.slugs) || {};
+    const id = Object.keys(slugs).find((key) => slugs[key] === part);
+    return id ? Number(id) : null;
+  }
+
+  // On the published site the address bar shows a team page as its short address (outofyourleague.com.br/
+  // gremio), which previews with the team's picture when shared: whatever follows # never reaches a link
+  // preview. publicar.py sets OOYL_SHORT to where the short pages live; the page keeps its own folder in a
+  // <base>, so its relative files still load under the other address, and every other route goes back to
+  // HOME#/.... A short page sends a visitor, with any #/ route, back here. Elsewhere only the slug shows.
+  const HOME = location.pathname;
+  const SHORT = typeof window.OOYL_SHORT === "string" ? window.OOYL_SHORT : null;
+  if (SHORT) document.head.prepend(el("base", { href: HOME }));
+  function showAddress(team, tab) {
+    const slugs = (state.index && state.index.slugs) || {};
+    let want = HOME + location.search + location.hash;
+    if (team != null && SHORT && slugs[team]) want = SHORT + slugs[team] + location.search + (tab === "resumo" ? "" : teamHref(team, tab));
+    else if (team != null) want = HOME + location.search + teamHref(team, tab);
+    if (want !== location.pathname + location.search + location.hash) history.replaceState(history.state, "", want);
+  }
+  // With the address on a short page, a link to "#/..." would leave for HOME: route it here instead.
+  document.addEventListener("click", (ev) => {
+    const link = ev.target.closest ? ev.target.closest('a[href^="#/"]') : null;
+    if (!link || ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+    ev.preventDefault();
+    go(link.getAttribute("href"));
+  });
+  // Back and forward between HOME and a short address change the path, which fires popstate but no hashchange;
+  // a plain #/ link fires both. Each address is routed once, whichever event brings it (after the index is in).
+  let routed = null;
+  function onHistory() {
+    if (!state.index || location.href === routed) return;
+    applyHash();
+    routed = location.href;
+  }
+
   function applyHash() {
-    const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
+    let parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
+    if (!parts.length && SHORT && location.pathname !== HOME) parts = ["time", location.pathname.slice(SHORT.length).replace(/\/$/, "")];
+    if (parts[0] !== "time") showAddress(null);
     if (parts[0] === "partida" && parts[1]) {
       const id = Number(parts[1]);
       const tab = MTABS.includes(parts[2]) ? parts[2] : "resumo";
@@ -5416,9 +5535,11 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       return;
     }
     if (parts[0] === "times") { setView("times"); renderTeams(); return; }
-    if (parts[0] === "time" && parts[1]) {  // #/time/{id} opens Resumo; #/time/{id}/{aba} the other tabs
-      const id = Number(parts[1]);
+    if (parts[0] === "time" && parts[1]) {  // #/time/{slug} opens Resumo; #/time/{slug}/{aba} the other tabs
+      const id = teamOf(parts[1]);
+      if (id == null) { go("#/times"); return; }  // a slug of no team of this league: the list of teams
       state.teamTab = TTABS.includes(parts[2]) ? parts[2] : "resumo";
+      showAddress(id, state.teamTab);
       if (state.team && state.team.team.id === id) { setView("time"); renderTeam(); } else openTeam(id);
       return;
     }
@@ -5431,7 +5552,8 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     }
     setView("temporada");
   }
-  addEventListener("hashchange", applyHash);
+  addEventListener("hashchange", onHistory);
+  addEventListener("popstate", onHistory);
 
   $("main-tabs").addEventListener("click", (ev) => {
     const btn = ev.target.closest('[role="tab"]');
