@@ -1095,6 +1095,44 @@
   /* Para quem torcer: one row per game of the round, the team's chance after each result, the best for it
      tinted in `good`; on phones the clubs' three-letter codes and no "Torça" column (the tint says it). */
   .compare-odds { margin-top: var(--space-3); max-width: 76ch; }
+  /* Números: the team's own line lit in the xG table; goals by 15 minutes as pairs of columns (scored in
+     `good`, conceded in `bad`), the league's mean per team dashed across each pair. On phones the tables
+     keep to the screen: the clubs' codes (the names still read aloud), short heads, no `wide` column. */
+  .xg-table tr.is-mine td { background: var(--accent-soft); }
+  .xg-table tr.is-mine td.left { font-weight: 600; color: var(--ink-strong); }
+  td small.venue { font: 400 11px/1 var(--font-mono); color: var(--ink-muted); }
+  .numbers__code, .numbers__short { display: none; }
+  .moments { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-5) 0 var(--space-3); }
+  .moments__col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .moments__plot {
+    position: relative; height: 150px; display: flex; align-items: flex-end; justify-content: center; gap: 4px;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .moments__bar { position: relative; width: 36%; min-height: 1px; border-radius: var(--radius-xs) var(--radius-xs) 0 0; }
+  .moments__bar.is-for { background: var(--good); }
+  .moments__bar.is-against { background: var(--bad); }
+  .moments__bar b {
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 3px;
+    font: 600 11px/1 var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .moments__mean { position: absolute; left: 4%; right: 4%; border-top: 2px dashed var(--ink-muted); pointer-events: none; }
+  .moments__label { text-align: center; font: 400 11px/1.2 var(--font-mono); color: var(--ink-muted); white-space: nowrap; }
+  .legend .moments__key { width: 16px; height: 0; background: none; border-top: 2px dashed var(--ink-muted); }
+  .moments + .legend { margin-bottom: var(--space-4); }
+  @media (max-width: 640px) {
+    .moments { gap: 4px; }
+    .moments__label, .moments__bar b { font-size: 10px; }
+    .moments__bar { width: 40%; }
+    .numbers__code, .numbers__short { display: inline; }
+    .numbers__code + .numbers__name, .numbers__long {
+      position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+    }
+    .numbers .numbers__wide { display: none; }
+    .numbers td, .numbers th { padding-left: 6px; padding-right: 6px; }
+    .numbers th { white-space: normal; }
+    .numbers td.pos { width: 28px; }
+    .numbers small.venue { display: block; margin-top: 3px; }
+  }
   .rooting td { vertical-align: middle; }
   .rooting__game { display: inline-flex; align-items: center; gap: 6px; font: 600 14px/1.3 var(--font-sans); color: var(--ink-strong); }
   .rooting__game i { margin: 0 2px; font-style: normal; font-weight: 400; color: var(--ink-muted); }
@@ -1487,7 +1525,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
             <p class="ooyl-sub" id="siman-sub">Carregando...</p>
           </div>
           <div class="ooyl-card__actions">
-            <button class="ooyl-btn ooyl-btn--sm" id="siman-fill" title="preenche só os jogos ainda vazios com o palpite do modelo: os jogos mais equilibrados, em que as chances de vitória dos dois lados estão mais próximas, viram 1-1, tantos quantos os empates que o modelo espera, e nos outros vence o favorito, por 1-0 ou 0-1. Zebras só aparecem em Sortear esta rodada.">Preencher vazios com o palpite do modelo</button>
+            <button class="ooyl-btn ooyl-btn--sm" id="siman-fill" title="preenche só os jogos ainda vazios com o palpite do modelo: os jogos mais equilibrados, em que as chances de vitória dos dois lados estão mais próximas, viram empate, tantos quantos os empates que o modelo espera, e nos outros vence o favorito; cada resultado pelo placar mais provável dele (1-0, 2-1, 1-1, 0-0...). Zebras só aparecem em Sortear esta rodada.">Preencher vazios com o palpite do modelo</button>
             <button class="ooyl-btn ooyl-btn--ghost ooyl-btn--sm" id="siman-clear">Limpar tudo</button>
           </div>
         </header>
@@ -1535,9 +1573,11 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
         <header class="ooyl-card__head">
           <div class="ooyl-card__titles">
             <h2 class="ooyl-headline">Jogo a jogo</h2>
-            <p class="ooyl-sub">O número é o placar exato mais provável de cada partida, que costuma ser 1-1 mesmo
-              quando há favorito. Quem é favorito aparece na barra, com a chance de vitória do mandante, empate e
-              vitória do visitante.</p>
+            <p class="ooyl-sub">O placar é o palpite do modelo, o mesmo de Simular rodada a rodada: vence o favorito,
+              menos nos jogos mais equilibrados, que ficam no empate, tantos quantos os empates que o modelo espera até o
+              fim; cada resultado pelo placar mais provável dele. O placar exato mais provável costuma ser 1-1 mesmo
+              quando há favorito, e fica na dica ao passar o mouse. A barra traz a chance de vitória do mandante, empate
+              e vitória do visitante.</p>
           </div>
           <div class="ooyl-card__actions">
             <label class="ctl" for="sim-round">Rodada</label>
@@ -3423,17 +3463,22 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     return outcome > 0 ? [sa + 1, sa] : outcome === 0 ? [1, 1] : [sh, sh + 1];
   }
 
-  // The model's pick for each game left, shown greyed in the boxes and written by the fill buttons.
-  // The favourite wins 1-0 or 0-1, except in the most balanced games (win chances closest together),
-  // which end 1-1: as many as the draws the model expects, the sum of the draw chances. The draw is
-  // never the biggest single chance, so without that quota the season would have no draws at all.
+  // The model's pick (palpite) for each game left: greyed in the boxes here and written by the fill buttons,
+  // the score of Jogo a jogo and of Comparar's games ahead. The favourite wins, except in the most balanced
+  // games (win chances closest together), which end level: as many as the draws the model expects, the sum
+  // of the draw chances. The draw is never the biggest single chance, so without that quota the season would
+  // have no draws at all. Each result comes with its likeliest score (simulation.odds `picks`: 2-0 for a rout
+  // in the making, 0-0 when goals are scarce); a server older than them sends none, and it is 1-0, 1-1 or 0-1.
   function modelGuess() {
     if (state.simGuess && state.simGuess.sim === state.sim) return state.simGuess;
     const games = allSimMatches();
     const draws = Math.round(games.reduce((sum, m) => sum + m.pDraw, 0));
     const level = new Set(games.slice().sort((x, y) => Math.abs(x.pHome - x.pAway) - Math.abs(y.pHome - y.pAway))
       .slice(0, draws));
-    const byKey = new Map(games.map((m) => [matchKey(m), level.has(m) ? [1, 1] : m.pHome >= m.pAway ? [1, 0] : [0, 1]]));
+    const byKey = new Map(games.map((m) => {
+      const side = level.has(m) ? 1 : m.pHome >= m.pAway ? 0 : 2;
+      return [matchKey(m), (m.picks || [[1, 0], [1, 1], [0, 1]])[side]];
+    }));
     state.simGuess = { sim: state.sim, byKey, draws, total: games.length };
     return state.simGuess;
   }
@@ -3452,9 +3497,9 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     const guess = modelGuess();
     $("siman-round-title").textContent = block.round ? `Rodada ${block.round}` : "Jogos sem data definida";
     $("siman-hint").textContent = "Digite os placares ou use 1, X e 2. A barrinha mostra as chances de vitória do mandante, "
-      + "empate e vitória do visitante. O número apagado é o palpite do modelo: os jogos mais equilibrados viram 1-1, "
+      + "empate e vitória do visitante. O número apagado é o palpite do modelo: os jogos mais equilibrados viram empate, "
       + `na quantidade de empates que ele espera até o fim da temporada (${fmt(guess.draws)} de ${fmt(guess.total)}), `
-      + "e nos outros vence o favorito, por 1-0 ou 0-1. Zebras só aparecem no sorteio.";
+      + "e nos outros vence o favorito, cada resultado pelo placar mais provável dele. Zebras só aparecem no sorteio.";
     const pick = clear($("siman-round"));
     rounds.forEach((b, i) => pick.appendChild(el("option", { value: String(i), text: b.round ? "Rodada " + b.round : "Sem data" })));
     pick.value = String(state.simManRound);
@@ -3577,13 +3622,20 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     });
   }
 
-  // The model's most likely score in an outlined box, the odds as one split bar.
+  // The model's pick (modelGuess) in an outlined box, the odds as one split bar. The single likeliest
+  // scoreline, nearly always a 1-1 even with a favourite, is left to the tooltip. In words, a word joiner
+  // keeps the score on one line (a line may break after an en dash).
+  function pickWords(m) {
+    const [gh, ga] = guessOf(m), score = `${gh}\u2013\u2060${ga}`;
+    return gh === ga ? `empate, ${score}` : `${(gh > ga ? m.home : m.away).short || (gh > ga ? m.home : m.away).name} vence, ${score}`;
+  }
   function simMatchNode(m) {
+    const [gh, ga] = guessOf(m);
     const node = el("div", { class: "ooyl-match is-predicted has-odds" },
       el("span", { class: "ooyl-match__when", text: m.timestamp ? dateOf(m.timestamp) : "s/ data" }),
       el("span", { class: "ooyl-match__side is-home is-draw" }, el("span", { text: m.home.short || m.home.name }), crest(m.home)),
-      el("span", { class: "ooyl-match__score" }, el("span", { text: String(m.score[0]) }), el("i", { text: "\u2013" }),
-        el("span", { text: String(m.score[1]) })),
+      el("span", { class: "ooyl-match__score", title: "palpite do modelo: " + pickWords(m) }, el("span", { text: String(gh) }),
+        el("i", { text: "\u2013" }), el("span", { text: String(ga) })),
       el("span", { class: "ooyl-match__side is-away is-draw" }, crest(m.away), el("span", { text: m.away.short || m.away.name })),
       el("span", { class: "ooyl-match__end" }, oddsBar(m.pHome, m.pDraw, m.pAway)));
     const show = (ev) => showTip(ev.clientX, ev.clientY, [
@@ -3592,7 +3644,8 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       tipLine("empate", pctText(m.pDraw), "var(--data-context)"),
       tipLine("vit\u00f3ria do visitante", pctText(m.pAway), "var(--away)"),
       el("div", { class: "l", text: `gols esperados ${fmt(m.lh, 2)} x ${fmt(m.la, 2)}` }),
-      el("div", { class: "l", text: `placar mais prov\u00e1vel ${m.score[0]}-${m.score[1]} (${pctText(m.scoreP)})` }),
+      el("div", { class: "l", text: `palpite: ${pickWords(m)}` }),
+      el("div", { class: "l", text: `placar exato mais prov\u00e1vel ${m.score[0]}-${m.score[1]} (${pctText(m.scoreP)})` }),
       el("div", { class: "l", text: m.timestamp ? new Date(m.timestamp * 1000).toLocaleDateString("pt-BR",
         { day: "2-digit", month: "long" }) : "sem data definida" }),
     ]);
@@ -3654,8 +3707,8 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
   }
   // The team page: the hero, then four sections under line tabs, each with its own route
   // #/time/{slug}/{aba} (teamHref); Resumo opens it. Filters inside a tab redraw only that tab.
-  const TTABS = ["resumo", "comparar", "escalacoes", "shotmap", "distancia"];
-  const TTAB_NAMES = { resumo: "Resumo", comparar: "Comparar", escalacoes: "Escalações", shotmap: "Shotmap",
+  const TTABS = ["resumo", "comparar", "numeros", "escalacoes", "shotmap", "distancia"];
+  const TTAB_NAMES = { resumo: "Resumo", comparar: "Comparar", numeros: "Números", escalacoes: "Escalações", shotmap: "Shotmap",
                        distancia: "Distância percorrida" };
   function renderTeam() {
     const t = state.team;
@@ -3681,6 +3734,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       text: "O servidor em execução é anterior a esta aba: reinicie o dashboard.py para ver os dados." })));
     if (state.teamTab === "resumo") return renderTeamSummary(host, t);
     if (state.teamTab === "comparar") return renderTeamCompare(host, t);
+    if (state.teamTab === "numeros") return renderTeamNumbers(host, t);
     if (state.teamTab === "shotmap") return t.shots ? renderTeamShots(host, t) : stale();
     if (state.teamTab === "distancia") return t.runners ? renderTeamDistance(host, t) : stale();
     renderTeamLineups(host, t);
@@ -4152,6 +4206,138 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     charts.get(host).width = host.clientWidth;
   }
 
+  // ---- time: números --------------------------------------------------------
+  // The team against the whole league, from /api/index: the xG table, the points each team's chances were
+  // worth (every shot a goal with the chance of its xG: dashboard.expected_points), the games furthest from
+  // it, and the game's moments (goals by 15 minutes, points dropped after leading and won after trailing:
+  // dashboard.count_moments).
+  const BANDS = [[1, 15], [16, 30], [31, 45], [46, 60], [61, 75], [76, 90]];
+  const signed1 = (v) => (v >= 0.05 ? "+" : v <= -0.05 ? "−" : "") + fmt(Math.abs(v), 1);
+  // A club in the tables, its code standing in for the name on phones; a head with its phone form (`short`)
+  // or none there (`wide`, as the column's cells).
+  const numbersClub = (team, name) => [crest(team),
+    team.code ? el("span", { class: "numbers__code", "aria-hidden": "true", text: team.code }) : null,
+    el("span", { class: "numbers__name", text: name })];
+  const numbersHead = ({ h, short, title, left, wide }) =>
+    el("th", { class: [left ? "left" : "", wide ? "numbers__wide" : ""].join(" ").trim() || null, title },
+      short ? [el("span", { class: "numbers__long", text: h }), el("span", { class: "numbers__short", "aria-hidden": "true", text: short })] : h);
+  function renderTeamNumbers(host, t) {
+    const rows = state.index.table, mine = rows.find((r) => r.team.id === t.team.id);
+    if (!mine || mine.xpts === undefined) {
+      host.appendChild(el("section", { class: "ooyl-card" }, el("div", { class: "empty",
+        text: "O servidor em execução é anterior a esta aba: reinicie o dashboard.py para ver os números." })));
+      return;
+    }
+    numbersXgTable(host, rows, mine);
+    numbersXgGames(host, t);
+    numbersMoments(host, rows, mine);
+  }
+
+  function numbersXgTable(host, rows, mine) {
+    const luck = (r) => r.xptsReal - r.xpts;
+    const order = rows.slice().sort((a, b) => b.xpts - a.xpts || (a.team.name || "").localeCompare(b.team.name || ""));
+    const at = order.indexOf(mine) + 1, d = luck(mine);
+    const favoured = rows.slice().sort((a, b) => luck(b) - luck(a));  // the most above its chances first
+    const rank = d >= 0 ? favoured.indexOf(mine) + 1 : rows.length - favoured.indexOf(mine);
+    const lead = el("p", { class: "stakes-lead" }, "Pelas chances que criou e cedeu, o time teria ",
+      el("b", { text: fmt(mine.xpts, 1) + " pontos" }), ", e não ", el("b", { text: fmt(mine.xptsReal) }),
+      Math.abs(d) < 0.05 ? ": exatamente o que as chances davam." : `: ${fmt(Math.abs(d), 1)} ${d > 0 ? "acima" : "abaixo"} do que `
+        + `elas davam, o ${rank}º ${d > 0 ? "mais favorecido" : "mais prejudicado"} da liga.`,
+      ` Na tabela do xG ficaria em `, el("b", { text: at + "º" }), `, e não em ${mine.pos}º.`,
+      mine.xptsGames < mine.j ? ` (Em ${mine.xptsGames} dos ${mine.j} jogos: os outros não têm shotmap.)` : "");
+    const table = el("table", { class: "xg-table numbers" },
+      el("thead", {}, el("tr", {}, [{ h: "#", title: "Posição pela tabela do xG", left: true }, { h: "Time", left: true },
+        { h: "Pelo xG", title: "Pontos que as chances valiam" }, { h: "Pontos", title: "Pontos de verdade, nos mesmos jogos" },
+        { h: "Diferença", short: "Dif.", title: "Pontos a mais (+) ou a menos (−) que as chances" },
+        { h: "Na tabela", title: "Posição na classificação", wide: true }].map(numbersHead))),
+      el("tbody", {}, order.map((r, i) => el("tr", { class: "row-link" + (r === mine ? " is-mine" : ""), title: "abrir os números do time",
+        onclick: () => go(teamHref(r.team.id, "numeros")) },
+        el("td", { class: "left pos", text: String(i + 1) }),
+        el("td", { class: "left" }, numbersClub(r.team, r.team.name)),
+        el("td", { class: "strong", text: fmt(r.xpts, 1) }),
+        el("td", { text: fmt(r.xptsReal) }),
+        el("td", { class: "shift" + (luck(r) >= 0.05 ? " is-better" : luck(r) <= -0.05 ? " is-worse" : ""), text: signed1(luck(r)) }),
+        el("td", { class: "muted numbers__wide", text: r.pos + "º" })))));
+    host.appendChild(cardBox("Tabela do xG", "Os pontos que cada time teria se cada jogo terminasse como as chances dele: cada "
+      + "finalização vira gol com a chance do seu xG, e daí saem a vitória, o empate e a derrota de cada partida. Gols contra "
+      + "ficam de fora. A diferença é o que o time tem a mais (+) ou a menos (−) do que as chances valiam.",
+      lead, el("div", { class: "scroll" }, table)));
+  }
+
+  // The team's games furthest from their xG, both ways: points it took that its chances did not give, and the reverse.
+  function numbersXgGames(host, t) {
+    const id = t.team.id;
+    const games = state.index.matches.filter((m) => (m.home.id === id || m.away.id === id) && m.xph != null).map((m) => {
+      const home = m.home.id === id, gf = home ? m.gh : m.ga, ga = home ? m.ga : m.gh, real = gf > ga ? 3 : gf === ga ? 1 : 0;
+      return { m, home, gf, ga, real, xp: home ? m.xph : m.xpa, opp: home ? m.away : m.home,
+               xgf: home ? m.xgh : m.xga, xgc: home ? m.xga : m.xgh };
+    });
+    if (!games.length) return;
+    const table = (list) => el("table", { class: "numbers" },
+      el("thead", {}, el("tr", {}, [{ h: "Rod.", title: "Rodada", left: true, wide: true }, { h: "Adversário", short: "Adv.", left: true },
+        { h: "Placar", left: true }, { h: "xG", title: "Gols esperados do time e do adversário" },
+        { h: "Pelo xG", title: "Pontos que as chances do jogo valiam" }, { h: "Pontos", short: "Pts" }].map(numbersHead))),
+      el("tbody", {}, list.map((g) => el("tr", { class: "row-link", title: "abrir a partida", onclick: () => go("#/partida/" + g.m.id) },
+        el("td", { class: "left numbers__wide", text: String(g.m.round ?? "-") }),
+        el("td", { class: "left" }, numbersClub(g.opp, g.opp.short || g.opp.name), el("small", { class: "venue", text: g.home ? " casa" : " fora" })),
+        el("td", { class: "left " + (g.real === 3 ? "win" : g.real === 0 ? "lose" : ""), text: `${g.gf}–${g.ga}` }),
+        el("td", { class: "muted", text: `${fmt(g.xgf, 1)}–${fmt(g.xgc, 1)}` }),
+        el("td", { text: fmt(g.xp, 1) }),
+        el("td", { class: "strong", text: String(g.real) })))));
+    const above = games.filter((g) => g.real - g.xp >= 0.5).sort((a, b) => (b.real - b.xp) - (a.real - a.xp)).slice(0, 4);
+    const below = games.filter((g) => g.real - g.xp <= -0.5).sort((a, b) => (a.real - a.xp) - (b.real - b.xp)).slice(0, 4);
+    const half = (title, list, none) => el("div", {}, el("h3", { class: "group-name", text: title }),
+      list.length ? el("div", { class: "scroll" }, table(list)) : el("div", { class: "empty", text: none }));
+    host.appendChild(cardBox("Os jogos que mais fugiram do xG", "Pelo xG são os pontos que as chances daquele jogo valiam. "
+      + "Clique para abrir a partida.", el("div", { class: "team-pair" },
+        half("Mais pontos que as chances", above, "Nenhum jogo com meio ponto ou mais acima do xG."),
+        half("Menos pontos que as chances", below, "Nenhum jogo com meio ponto ou mais abaixo do xG."))));
+  }
+
+  // Goals by 15 minutes, scored and conceded, over the league's mean per team; and what the team did with a lead.
+  function numbersMoments(host, rows, mine) {
+    const m = mine.moments;
+    if (!m || !m.games) return;
+    const sum = (list) => list.reduce((a, b) => a + b, 0);
+    const peak = (list) => list.indexOf(Math.max(...list));
+    const band = (i) => `dos ${BANDS[i][0]} aos ${BANDS[i][1]} minutos`;
+    const measured = rows.filter((r) => r.moments && r.moments.games);
+    const leagueMean = BANDS.map((_, i) => measured.reduce((s, r) => s + r.moments.for[i], 0) / Math.max(1, measured.length));
+    const top = Math.max(1, ...m.for, ...m.against, ...leagueMean);
+    const lead = el("p", { class: "stakes-lead" }, "O time marca mais ", el("b", { text: band(peak(m.for)) }),
+      ` (${m.for[peak(m.for)]} dos ${sum(m.for)} gols) e sofre mais `, el("b", { text: band(peak(m.against)) }),
+      ` (${m.against[peak(m.against)]} dos ${sum(m.against)}).`);
+    const chart = el("div", { class: "moments", role: "img", "aria-label": "Gols marcados e sofridos a cada 15 minutos: "
+      + BANDS.map((b, i) => `${b[0]} a ${b[1]}, ${m.for[i]} marcados e ${m.against[i]} sofridos`).join("; ") },
+      BANDS.map((b, i) => el("div", { class: "moments__col", title: `${b[0]} a ${b[1]} min: ${m.for[i]} marcados, ${m.against[i]} sofridos; `
+        + `a média da liga é ${fmt(leagueMean[i], 1)} por time` },
+        el("div", { class: "moments__plot" },
+          el("span", { class: "moments__bar is-for", style: `height:${(100 * m.for[i] / top).toFixed(1)}%` }, el("b", { text: String(m.for[i]) })),
+          el("span", { class: "moments__bar is-against", style: `height:${(100 * m.against[i] / top).toFixed(1)}%` }, el("b", { text: String(m.against[i]) })),
+          el("i", { class: "moments__mean", style: `bottom:${(100 * leagueMean[i] / top).toFixed(1)}%` })),
+        el("span", { class: "moments__label", text: `${b[0]}–${b[1]}` }))));
+    const legend = el("div", { class: "legend" },
+      el("span", { class: "k" }, el("i", { class: "swatch", style: "background:var(--good)" }), "marcados"),
+      el("span", { class: "k" }, el("i", { class: "swatch", style: "background:var(--bad)" }), "sofridos"),
+      el("span", { class: "k" }, el("i", { class: "stroke moments__key" }), "média da liga por time"));
+    // points dropped after leading and won after trailing, ranked against the league
+    const dropped = (r) => 3 * r.moments.led - r.moments.ledPoints;
+    const place = (value, pick) => 1 + measured.filter((r) => pick(r) > value).length;
+    const tiles = el("div", { class: "ooyl-tiles" });
+    const firstHalf = (list) => sum(list.slice(0, 3)), secondHalf = (list) => sum(list.slice(3));
+    [["Pontos perdidos na frente", fmt(dropped(mine)), `em ${counted(m.led, "jogo", "jogos")} em que esteve ganhando; `
+        + `${place(dropped(mine), dropped)}º que mais perdeu`],
+     ["Pontos ganhos atrás", fmt(m.trailedPoints), `em ${counted(m.trailed, "jogo", "jogos")} em que esteve perdendo; `
+        + `${place(m.trailedPoints, (r) => r.moments.trailedPoints)}º que mais ganhou`],
+     ["Saldo no 1º tempo", signedInt(firstHalf(m.for) - firstHalf(m.against)), `${firstHalf(m.for)} gols marcados, ${firstHalf(m.against)} sofridos`],
+     ["Saldo no 2º tempo", signedInt(secondHalf(m.for) - secondHalf(m.against)), `${secondHalf(m.for)} gols marcados, ${secondHalf(m.against)} sofridos`],
+    ].forEach(([label, value, note]) => tiles.appendChild(tile(label, value, note)));
+    host.appendChild(cardBox("Momentos do jogo", "Gols marcados e sofridos a cada 15 minutos (os acréscimos contam no último "
+      + "período de cada tempo), com a média da liga tracejada, e o que o time fez com o placar a favor e contra.",
+      lead, chart, legend, tiles));
+  }
+  const signedInt = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v));
+
   // ---- time: comparar -------------------------------------------------------
   // Two teams side by side, the page's team on the left in the home color: a scoreboard of how many rows each
   // one leads, their games this season and the ones left with the model's odds, then the table, attack,
@@ -4344,9 +4530,10 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       }), ahead.map((m) => simMatchNode(m)));
       const odds = ahead.map((m) => `${dated(m) ? `${longDay(m.timestamp)}, ${timeOf(m.timestamp)}` : "sem data"}: `
         + `${m.home.short || m.home.name} ${pctText(m.pHome)}, empate ${pctText(m.pDraw)}, ${m.away.short || m.away.name} ${pctText(m.pAway)}; `
-        + `placar mais provável ${m.score[0]}–${m.score[1]}.`);
+        + `palpite: ${pickWords(m)}; gols esperados ${fmt(m.lh, 1)} × ${fmt(m.la, 1)}.`);
       host.appendChild(cardBox("Confronto direto", (played.length ? "Os jogos entre os dois nesta temporada, clique para abrir. " : "")
-        + (ahead.length ? "O que falta, com o placar mais provável e as chances do modelo." : ""),
+        + (ahead.length ? "O que falta, com o palpite do modelo (o do Simulador: vence o favorito, e os jogos mais equilibrados "
+          + "ficam no empate) e as chances de cada resultado." : ""),
         list, odds.length ? el("p", { class: "ooyl-sub compare-odds", text: odds.join(" ") }) : null));
     }
     host.appendChild(cardBox("Lado a lado", "Na temporada, a maioria por jogo; em cada linha, o melhor dos dois aceso. Posse, passes, "
