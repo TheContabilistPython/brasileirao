@@ -1119,6 +1119,13 @@
   .origins tr.is-part td.left { padding-left: var(--space-5); font-size: 13px; color: var(--ink-muted); }
   .origins tr.is-total td { border-top: 1px solid var(--line-strong); }
   .origins tr.is-total td.left { font-weight: 600; color: var(--ink-strong); }
+  /* Valor do elenco: the points x value chart, the team's badge ringed; the value x rating tags of the squad lists. */
+  .value-chart { margin: var(--space-5) 0 var(--space-2); }
+  .ooyl-chart .ring { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+  .value-note { margin: var(--space-5) 0 0; max-width: 76ch; }
+  .ooyl-tag.deal { margin-right: 8px; vertical-align: 1px; }
+  .ooyl-tag.deal--good { color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+  .ooyl-tag.deal--dear { color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); }
   .moments { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-5) 0 var(--space-3); }
   .moments__col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .moments__plot {
@@ -1151,6 +1158,8 @@
     .numbers small.venue { display: block; margin-top: 3px; }
     .origins td small { display: block; margin: 3px 0 0; }
     .origins tr.is-part td.left { padding-left: var(--space-4); }
+    .deals td .face { display: none; }
+    .ooyl-tile.is-money { grid-column: 1 / -1; }
     /* the short values of Casa × fora leave the middle to the names and notes */
     .venues .ooyl-compare__row { grid-template-columns: 52px minmax(0, 1fr) 52px; column-gap: var(--space-2); }
     /* each number on two lines, the name and value over a strip as wide as the card */
@@ -2990,7 +2999,16 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     Nota: "Nota média das partidas em que atuou", J: "Partidas com nota",
     Min: "Minutos em campo", G: "Gols", A: "Assistências",
     Melhor: "Maior nota em uma única partida", Pos: "Posição mais frequente na escalação",
+    Idade: "Idade no último jogo da temporada", Valor: "Valor de mercado do SofaScore, em euros",
   };
+  // Money as a fan reads it: € 16,5 mi, € 970 mil.
+  const money = (v) => (v >= 1e6 ? `€ ${fmt(v / 1e6, 1)} mi` : `€ ${fmt(v / 1e3, 0)} mil`);
+  // A regular's corner of value x rating for his age (dashboard.build_index `deal`: valores.deals), as a tag.
+  const DEALS = {
+    good: ["custo-benefício", "Joga mais do que o valor dele sugere para a idade (veja Números > Valor do elenco)"],
+    dear: ["caro", "Vale mais do que joga, para a idade dele (veja Números > Valor do elenco)"],
+  };
+  const dealTag = (p) => (p.deal ? el("span", { class: "ooyl-tag deal deal--" + p.deal, text: DEALS[p.deal][0], title: DEALS[p.deal][1] }) : null);
 
   // Sem um mínimo de jogos o ranking vira ruído: uma nota alta numa única partida
   // passa na frente de quem sustentou a média a temporada inteira.
@@ -3077,9 +3095,10 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     playerTable($("top-rated-table"), top, 10);
   }
 
-  function playerTable(node, list, limit) {
+  // opts.value adds the age and the market value, with the value x rating tag (a team's squad list).
+  function playerTable(node, list, limit, opts = {}) {
     const table = clear(node);
-    const head = ["#", "Jogador", "Time", "Pos", "Nota", "J", "Min", "G", "A", "Melhor"];
+    const head = ["#", "Jogador", "Time", "Pos", "Nota", "J", "Min", "G", "A", "Melhor", ...(opts.value ? ["Idade", "Valor"] : [])];
     table.appendChild(el("thead", {}, el("tr", {}, head.map((h, i) =>
       el("th", { class: i <= 3 ? "left" : "", text: h, title: PLAYER_TITLES[h] || "" })))));
     table.appendChild(el("tbody", {}, list.slice(0, limit).map((p, i) => el("tr", { class: "row-link", title: "abrir a temporada do jogador", onclick: () => go("#/jogador/" + p.id) },
@@ -3090,7 +3109,9 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       el("td", { class: "strong", text: fmt(p.avg, 2) }),
       el("td", { text: fmt(p.j) }), el("td", { text: fmt(p.min) }),
       el("td", { text: fmt(p.goals) }), el("td", { text: fmt(p.assists) }),
-      el("td", { text: fmt(p.best, 1) })))));
+      el("td", { text: fmt(p.best, 1) }),
+      opts.value ? [el("td", { text: p.age == null ? "-" : fmt(p.age) }),
+                    el("td", {}, dealTag(p), p.value ? money(p.value) : "-")] : null))));
   }
 
   const RANKING_LIMIT = 50;
@@ -3794,9 +3815,10 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     host.appendChild(card);
     const squad = state.index.players.filter((p) => p.team === t.team.short);
     const table = el("table");
-    host.appendChild(cardBox("Elenco por nota média", "Todos com nota na temporada por este time. Clique para abrir o jogador.",
-      el("div", { class: "scroll" }, table)));
-    playerTable(table, squad, 40);
+    host.appendChild(cardBox("Elenco por nota média", "Todos com nota na temporada por este time, com o valor de mercado do "
+      + "SofaScore. Custo-benefício é quem joga mais do que o valor sugere para a idade, e caro o contrário (veja Números > "
+      + "Valor do elenco). Clique para abrir o jogador.", el("div", { class: "scroll" }, table)));
+    playerTable(table, squad, 40, { value: true });
   }
 
   // ---- time: resumo ---------------------------------------------------------
@@ -4261,6 +4283,7 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
     numbersVenues(host, rows, mine);
     numbersMoments(host, rows, mine);
     numbersOrigins(host, rows, mine);
+    numbersValue(host, rows, mine);
   }
 
   // A place said so that its direction cannot be misread: "o melhor", "o 3º melhor", "o 2º pior", "o pior".
@@ -4595,6 +4618,130 @@ window.addEventListener("hashchange", () => window.goatcounter.count && window.g
       el("div", { class: "team-pair" },
         el("div", {}, el("h3", { class: "group-name", text: "Origem dos gols" }), el("div", { class: "scroll" }, table)),
         el("div", {}, el("h3", { class: "group-name", text: "Quem faz os gols" }), scorers))));
+  }
+
+  // The squad's SofaScore value (the index row's `squad`: the players of the club's last ten match-day squads
+  // still there, valores.squad_value), its place among the 20 and the points a squad of that value makes in
+  // this league: points per game against the log of the value, a least-squares line through the 20 clubs.
+  // Then the team's regulars who play more than they cost for their age, and the reverse (`deal`:
+  // valores.deals, the corners of the value x rating poster's --idade edition).
+  function valueFit(rows) {
+    const pts = rows.filter((r) => r.squad && r.squad.value > 0 && r.j).map((r) => ({ r, x: Math.log10(r.squad.value), y: r.pts / r.j }));
+    const mx = pts.reduce((s, p) => s + p.x, 0) / pts.length, my = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+    const sxx = pts.reduce((s, p) => s + (p.x - mx) ** 2, 0), sxy = pts.reduce((s, p) => s + (p.x - mx) * (p.y - my), 0);
+    const slope = sxx ? sxy / sxx : 0;
+    return { pts, games: pts.reduce((s, p) => s + p.r.j, 0) / pts.length,
+             perGame: (value) => my + slope * (Math.log10(value) - mx) };  // points per game for a squad of `value`
+  }
+  function numbersValue(host, rows, mine) {
+    const sq = mine.squad;
+    if (!sq || !sq.value) return;
+    const fit = valueFit(rows);
+    if (fit.pts.length < 3) return;
+    const rank = 1 + fit.pts.filter((p) => p.r.squad.value > sq.value).length;
+    const gapOf = (r) => r.pts - fit.perGame(r.squad.value) * r.j;
+    const gap = gapOf(mine), expected = Math.round(fit.perGame(sq.value) * mine.j), shown = mine.pts - expected;
+    const above = 1 + fit.pts.filter((p) => gapOf(p.r) > gap).length, below = 1 + fit.pts.filter((p) => gapOf(p.r) < gap).length;
+    const lead = el("p", { class: "stakes-lead" }, "O elenco vale ", el("b", { text: money(sq.value) }),
+      ` pelo SofaScore, ${rank === 1 ? "o mais caro" : `o ${rank}º mais caro`} da liga. Um elenco desse valor costuma fazer uns `,
+      el("b", { text: counted(expected, "ponto", "pontos") }), ` em ${mine.j} jogos; o time tem ${mine.pts}`,
+      shown === 0 ? ": o que o elenco vale."
+        : shown > 0 ? `, ${shown} a mais: ${above === 1 ? "o que mais rende acima do valor" : `o ${above}º que mais rende acima do valor`}.`
+          : `, ${-shown} a menos: ${below === 1 ? "o que mais rende abaixo do valor" : `o ${below}º que mais rende abaixo do valor`}.`);
+    const tiles = el("div", { class: "ooyl-tiles" }), top = sq.top[0];
+    [["Valor do elenco", money(sq.value), `${rank}º mais caro da liga · ${counted(sq.players, "jogador", "jogadores")}`
+        + (sq.valued < sq.players ? `, ${sq.valued} com valor` : "")],
+     ["Pontos pelo valor", fmt(expected), `tem ${mine.pts} (${signedInt(shown)})`],
+     top ? ["Mais valioso", top.name, money(top.value), { text: true }] : null,
+    ].filter(Boolean).forEach(([label, value, note, opts]) => tiles.appendChild(tile(label, value, note, opts)));
+    tiles.firstChild.classList.add("is-money");  // "€ 104,9 mi" needs a phone's whole row
+    const chart = el("div", { class: "value-chart" });
+
+    const regulars = state.index.players.filter((p) => p.team === mine.team.short);
+    const good = regulars.filter((p) => p.deal === "good").sort((a, b) => a.vsAge - b.vsAge);
+    const dear = regulars.filter((p) => p.deal === "dear").sort((a, b) => b.vsAge - a.vsAge);
+    const deals = (list) => el("table", { class: "numbers deals" },
+      el("thead", {}, el("tr", {}, [{ h: "Jogador", left: true }, { h: "Idade" }, { h: "Valor" },
+        { h: "Pela idade", title: "O valor dividido pelo valor típico da idade dele na liga", wide: true },
+        { h: "Nota", title: "Nota média na temporada" }].map(numbersHead))),
+      el("tbody", {}, list.map((p) => el("tr", { class: "row-link", title: "abrir a temporada do jogador", onclick: () => go("#/jogador/" + p.id) },
+        el("td", { class: "left" }, face(p), el("span", { text: p.name })),
+        el("td", { text: fmt(p.age) }), el("td", { text: money(p.value) }),
+        el("td", { class: "muted numbers__wide", text: fmt(p.vsAge, 1) + "×" }), el("td", { class: "strong", text: fmt(p.avg, 2) })))));
+    const half = (title, list, none) => el("div", {}, el("h3", { class: "group-name", text: title }),
+      list.length ? el("div", { class: "scroll" }, deals(list)) : el("div", { class: "empty", text: none }));
+    host.appendChild(cardBox("Valor do elenco", "O valor de mercado do SofaScore, em euros, dos jogadores que estiveram nos "
+      + "relacionados dos últimos 10 jogos e seguem no clube. No gráfico, cada escudo é um time: quanto mais à direita, mais caro "
+      + "o elenco (em escala que cresce em múltiplos), e a linha tracejada é quanto um elenco daquele valor costuma pontuar nesta "
+      + "liga. Toque ou passe o mouse num escudo para ver o time.", lead, tiles, chart,
+      el("p", { class: "ooyl-sub value-note", text: "Descontada a idade: o valor de cada titular (quem jogou em metade das rodadas "
+        + "ou mais, sem goleiros) dividido pelo valor típico da idade dele na liga, contra a nota média. Pela idade, 1× é o típico." }),
+      el("div", { class: "team-pair" },
+        half("Joga mais do que custa", good, "Nenhum titular do time bem acima do que o valor sugere."),
+        half("Custa mais do que joga", dear, "Nenhum titular do time bem abaixo do que o valor sugere."))));
+    valueChart(chart, fit, mine);
+  }
+
+  // Points against squad value, log scale, each club by its badge; the team's ringed, the league's line dashed.
+  // A tap shows the club and a second one on it opens its Números (a click does at once, with a mouse).
+  const VALUE_TICKS = [5e6, 1e7, 2e7, 5e7, 1e8, 2e8, 5e8, 1e9];
+  function valueChart(host, fit, mine) {
+    clear(host);
+    charts.set(host, { width: host.clientWidth, draw: () => valueChart(host, fit, mine) });
+    const W = Math.max(300, Math.round(host.clientWidth || 900)), H = W < 560 ? 270 : 330, S = W < 560 ? 18 : 24;
+    const P = { t: 16, r: S / 2 + 6, b: 34, l: 40 };
+    const line = (x) => fit.perGame(10 ** x) * fit.games;
+    const xs = fit.pts.map((p) => p.x), pad = (Math.max(...xs) - Math.min(...xs)) * 0.05 || 0.1;
+    const x0 = Math.min(...xs) - pad, x1 = Math.max(...xs) + pad;
+    const ys = [...fit.pts.map((p) => p.r.pts), line(x0), line(x1)];
+    const y0 = Math.max(0, Math.floor((Math.min(...ys) - 3) / 10) * 10), y1 = Math.ceil((Math.max(...ys) + 3) / 10) * 10;
+    const px = (x) => P.l + ((x - x0) / (x1 - x0)) * (W - P.l - P.r);
+    const py = (y) => H - P.b - ((y - y0) / (y1 - y0)) * (H - P.t - P.b);
+    const svg = el("svg", { class: "ooyl-chart", viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img",
+      "aria-label": "Pontos contra o valor do elenco dos times da liga; " + fit.pts.map((p) => `${p.r.team.name}: ${money(p.r.squad.value)}, ${p.r.pts} pontos`).join("; ") });
+    for (let y = y0; y <= y1 + 1e-9; y += 10) {
+      svg.appendChild(el("line", { class: y === y0 ? "axis" : "grid", x1: P.l, x2: W - P.r, y1: py(y), y2: py(y) }));
+      svg.appendChild(el("text", { class: "tick", x: P.l - 10, y: py(y) + 4, "text-anchor": "end", text: String(y) }));
+    }
+    VALUE_TICKS.filter((v) => Math.log10(v) >= x0 && Math.log10(v) <= x1).forEach((v) => {
+      svg.appendChild(el("line", { class: "grid", x1: px(Math.log10(v)), x2: px(Math.log10(v)), y1: P.t, y2: H - P.b }));
+      svg.appendChild(el("text", { class: "tick", x: px(Math.log10(v)), y: H - 12, "text-anchor": "middle", text: money(v).replace(",0 ", " ") }));
+    });
+    svg.appendChild(el("text", { class: "note", x: P.l, y: P.t - 4, text: "pontos" }));
+    svg.appendChild(el("line", { class: "ref", x1: px(x0), y1: py(line(x0)), x2: px(x1), y2: py(line(x1)) }));
+    const place = (p) => [px(p.x), py(p.r.pts)];
+    fit.pts.filter((p) => p.r !== mine).concat(fit.pts.filter((p) => p.r === mine)).forEach((p) => {
+      const [cx, cy] = place(p), isMine = p.r === mine;
+      if (isMine) {
+        svg.appendChild(el("circle", { class: "halo", cx, cy, r: S * 0.95 }));
+        svg.appendChild(el("circle", { class: "ring", cx, cy, r: S * 0.72 }));
+      }
+      svg.appendChild(p.r.team.logo
+        ? el("image", { href: p.r.team.logo, x: cx - S / 2, y: cy - S / 2, width: S, height: S, opacity: isMine ? 1 : 0.85 })
+        : el("circle", { class: isMine ? "hl" : "point", cx, cy, r: 5 }));
+    });
+    const nearest = (ev) => {
+      const box = svg.getBoundingClientRect(), mx = (ev.clientX - box.left) * (W / box.width), my = (ev.clientY - box.top) * (H / box.height);
+      let best = null, bd = (S * 1.2) ** 2;
+      fit.pts.forEach((p) => { const [cx, cy] = place(p), d = (cx - mx) ** 2 + (cy - my) ** 2; if (d < bd) { bd = d; best = p; } });
+      return best;
+    };
+    const tip = (ev, p) => showTip(ev.clientX, ev.clientY, [el("div", { class: "l", text: p.r.team.name }),
+      tipLine("valor do elenco", money(p.r.squad.value), "var(--data-dot)"), tipLine("pontos", fmt(p.r.pts), "var(--accent)"),
+      el("div", { class: "l", text: `um elenco desse valor faz uns ${fmt(Math.round(fit.perGame(p.r.squad.value) * p.r.j))}` })]);
+    let armed = null, touch = false;
+    svg.addEventListener("pointerdown", (ev) => { touch = ev.pointerType !== "mouse"; });
+    svg.addEventListener("pointermove", (ev) => { const p = nearest(ev); if (p) tip(ev, p); else hideTip(); });
+    svg.addEventListener("pointerleave", () => { armed = null; hideTip(); });
+    svg.addEventListener("click", (ev) => {
+      const p = nearest(ev);
+      if (!p) { armed = null; hideTip(); return; }
+      if (!touch || armed === p) { hideTip(); go(teamHref(p.r.team.id, "numeros")); return; }
+      armed = p;
+      tip(ev, p);
+    });
+    host.appendChild(svg);
+    charts.get(host).width = host.clientWidth;
   }
 
   // ---- time: comparar -------------------------------------------------------
